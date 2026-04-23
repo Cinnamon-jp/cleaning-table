@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -13,25 +14,11 @@ func checkExcelSyntax(excel [][]string) error {
 		for j, cell := range row {
 			// 1行目の部屋番号をチェック
 			if i == 0 {
-				roomNumbers := strings.Split(cell, ",")
-				for _, roomNumber := range roomNumbers {
-					if !isRoomNumber(roomNumber) {
-						cellName, err := indexToCell(i, j)
-						if err != nil {
-							return err
-						}
-						slog.Error("Invalid room number: %s in %s", cell, cellName)
-					}
+				if roomNumbers, err := roomStringToNumbers(cell); err != nil {
+					return err
 				}
 			// 2行目以降の清掃役職をチェック
 			} else {
-				if !isTask(cell) {
-					cellName, err := indexToCell(i, j)
-					if err != nil {
-						return err
-					}
-					slog.Error("Invalid task: %s in %s", cell, cellName)
-				}
 			}
 		}
 	}
@@ -40,19 +27,87 @@ func checkExcelSyntax(excel [][]string) error {
 
 // 正規表現
 var (
-	roomNumberRegexp = regexp.MustCompile(`^\d{3}(~\d{3})?$`)
-	taskRegexp       = regexp.MustCompile(`^.+\*(\d+|\?)$`)
+	roomNumberRegex = regexp.MustCompile(`^\d+(~\d+)?$`)
+	existRoomRegex  = regexp.MustCompile(VALID_ROOM_NUMBER)
+	taskRegex       = regexp.MustCompile(`^.+\*(\d+|\?)$`)
 )
 
-// isRoomNumberは`,`で区切った要素をチェックする
-func isRoomNumber(str string) bool {
-	return roomNumberRegexp.MatchString(str)
+// roomStringToNumbersは部屋番号文字列を解析し、intのスライスを返す
+func roomStringToNumbers(str string) ([]int, error) {
+	// 文字列を正規化
+	str = strings.TrimSpace(str)
+    roomNumbers := strings.Split(str, ",")
+
+	// 戻り値の初期化
+	returnSlice := []int{}
+
+	// 各要素をチェック
+	for i, roomNumber := range roomNumbers {
+		// エラーメッセージ用のセル名を代入
+		cellName, err := indexToCell(0, i)
+		if err != nil {
+			return []int{}, err
+		}
+
+		// 正規表現で部屋番号のフォーマットをチェック
+		if isValidRoomNumber := roomNumberRegex.MatchString(roomNumber); !isValidRoomNumber {
+			slog.Error("Invalid room number: %s in %s", roomNumber, cellName)
+			return []int{}, errors.New("Invalid room number syntax: %s Room number range is descending (部屋番号の範囲が降順になっています)", cellName)
+		}
+
+		// 部屋番号範囲指定を処理
+		if roomNumbers := strings.Split(roomNumber, "~"); len(roomNumbers) == 2 {
+			// 整数に変換
+			startNumber, err := strconv.Atoi(roomNumbers[0])
+			if err != nil {
+				return []int{}, err
+			}
+			endNumber, err := strconv.Atoi(roomNumbers[1])
+			if err != nil {
+				return []int{}, err
+			}
+			// 範囲が昇順になっているかチェック
+			if startNumber > endNumber {
+				slog.Error("Invalid room number syntax: [%s] Room number range is descending (部屋番号の範囲が降順になっています)", cellName)
+				return []int{}, errors.New("Invalid room number syntax")
+			}
+			// startNumberからendNumberまでの部屋番号を追加
+			for i := startNumber; i <= endNumber; i++ {
+				returnSlice = append(returnSlice, i)
+			}
+
+		// 単部屋番号指定を処理
+		} else {
+			// 整数に変換
+			roomNumber, err := strconv.Atoi(roomNumber)
+			if err != nil {
+				return []int{}, err
+			}
+			// 部屋番号を追加
+			returnSlice = append(returnSlice, roomNumber)
+		}
+	}
+
+	// 重複した部屋番号がないかチェック
+	seen := make(map[int]bool)
+	for _, roomNumber := range returnSlice {
+		if seen[roomNumber] {
+			slog.Error("Invalid room number syntax: [%s] Duplicate room number (部屋番号が重複しています)", cellName)
+			return []int{}, errors.New("Invalid room number syntax")
+		}
+		seen[roomNumber] = true
+	}
+
+	// 昇順に並び替え
+	sort.Ints(returnSlice)
+
+	return returnSlice, nil
 }
 
 // isTaskは1行目以外の要素をチェックする
-func isTask(str string) bool {
-	return taskRegexp.MatchString(str)
-}
+// func isTask(str string) bool {
+// 	return taskRegexp.MatchString(str)
+// }
 
 // indexToCellは0-indexed [row, col] pairをExcelセル名に変換する(例:"A1")
 func indexToCell(row, col int) (string, error) {
