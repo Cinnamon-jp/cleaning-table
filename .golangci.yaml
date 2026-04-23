@@ -1,0 +1,45 @@
+version: "2"
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    govet:
+      enable:
+        - shadow
+    staticcheck:
+      checks: ["all"]
+    unused:
+      exported-fields-are-used: true
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    gofumpt:
+      extra-rules: true
+      module-path: "go-server"
+    goimports:
+      local-prefixes: ["go-server"]
+
+issues:
+  max-issues-per-linter: 50
+  max-same-issues: 3
+
+output:
+  show-stats: true
+  sort-order: ["linter", "severity", "file"]
+
+run:
+  timeout: "5m"
+  tests: true
+
+severity:
+  default: ""
