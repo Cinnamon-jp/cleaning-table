@@ -11,10 +11,10 @@ import (
 
 func checkExcelSyntax(excel [][]string) error {
 	for i, row := range excel {
-		for j, cell := range row {
+		for _, cell := range row {
 			// 1行目の部屋番号をチェック
 			if i == 0 {
-				if roomNumbers, err := roomStringToNumbers(cell); err != nil {
+				if _, err := roomStringToNumbers(cell); err != nil {
 					return err
 				}
 			// 2行目以降の清掃役職をチェック
@@ -51,8 +51,8 @@ func roomStringToNumbers(str string) ([]int, error) {
 
 		// 正規表現で部屋番号のフォーマットをチェック
 		if isValidRoomNumber := roomNumberRegex.MatchString(roomNumber); !isValidRoomNumber {
-			slog.Error("Invalid room number: %s in %s", roomNumber, cellName)
-			return []int{}, errors.New("Invalid room number syntax: %s Room number range is descending (部屋番号の範囲が降順になっています)", cellName)
+			slog.Error("Invalid room number", "room", roomNumber, "cell", cellName)
+			return []int{}, errors.New("Invalid room number syntax: Room number range is descending (部屋番号の範囲が降順になっています)")
 		}
 
 		// 部屋番号範囲指定を処理
@@ -68,7 +68,7 @@ func roomStringToNumbers(str string) ([]int, error) {
 			}
 			// 範囲が昇順になっているかチェック
 			if startNumber > endNumber {
-				slog.Error("Invalid room number syntax: [%s] Room number range is descending (部屋番号の範囲が降順になっています)", cellName)
+				slog.Error("Invalid room number syntax: Room number range is descending", "cell", cellName)
 				return []int{}, errors.New("Invalid room number syntax")
 			}
 			// startNumberからendNumberまでの部屋番号を追加
@@ -92,7 +92,7 @@ func roomStringToNumbers(str string) ([]int, error) {
 	seen := make(map[int]bool)
 	for _, roomNumber := range returnSlice {
 		if seen[roomNumber] {
-			slog.Error("Invalid room number syntax: [%s] Duplicate room number (部屋番号が重複しています)", cellName)
+			slog.Error("Invalid room number syntax: Duplicate room number (部屋番号が重複しています)")
 			return []int{}, errors.New("Invalid room number syntax")
 		}
 		seen[roomNumber] = true
@@ -104,10 +104,9 @@ func roomStringToNumbers(str string) ([]int, error) {
 	return returnSlice, nil
 }
 
-// isTaskは1行目以外の要素をチェックする
-// func isTask(str string) bool {
-// 	return taskRegexp.MatchString(str)
-// }
+// taskStringToSliceは役役職文字列解析して役職数分のスライスを返す
+func taskStringToSlice(tasks []string) ([]string, error) {
+}
 
 // indexToCellは0-indexed [row, col] pairをExcelセル名に変換する(例:"A1")
 func indexToCell(row, col int) (string, error) {
