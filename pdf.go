@@ -34,12 +34,12 @@ func mapRolesToRooms(result *ShuffleResult) map[int]string {
 func GeneratePDF(result *ShuffleResult, outputPath string) error {
 	builder := config.NewBuilder().
 		WithPageSize(pagesize.A4).
-		WithOrientation(orientation.Horizontal).
+		WithOrientation(orientation.Vertical).
 		WithMaxGridSize(11). // 両端に部屋番号(2枠) + 1F~9F(9枠) = 11枠
 		WithLeftMargin(10).
 		WithRightMargin(10).
-		WithTopMargin(5).
-		WithBottomMargin(5).
+		WithTopMargin(10).
+		WithBottomMargin(10).
 		WithCustomFonts([]*entity.CustomFont{
 			{
 				Family: "NotoSansJP",
@@ -96,14 +96,14 @@ func GeneratePDF(result *ShuffleResult, outputPath string) error {
 		Align: align.Center,
 	}).WithStyle(cellStyle))
 
-	m.AddRows(row.New(4).Add(headerCols...))
+	m.AddRows(row.New(5).Add(headerCols...))
 
 	// 各行 (01 ~ 49)
 	for r := 1; r <= 49; r++ {
 		rowCols := []core.Col{
 			text.NewCol(1, fmt.Sprintf("%02d", r), props.Text{
 				Align: align.Center,
-				Top:   1,
+				Top:   1.5,
 			}).WithStyle(cellStyle),
 		}
 
@@ -115,16 +115,16 @@ func GeneratePDF(result *ShuffleResult, outputPath string) error {
 			}
 			rowCols = append(rowCols, text.NewCol(1, roleName, props.Text{
 				Align: align.Center,
-				Top:   1,
+				Top:   1.5,
 			}).WithStyle(cellStyle))
 		}
 
 		rowCols = append(rowCols, text.NewCol(1, fmt.Sprintf("%02d", r), props.Text{
 			Align: align.Center,
-			Top:   1,
+			Top:   1.5,
 		}).WithStyle(cellStyle))
 
-		m.AddRows(row.New(3.5).Add(rowCols...))
+		m.AddRows(row.New(5).Add(rowCols...))
 	}
 
 	doc, err := m.Generate()
