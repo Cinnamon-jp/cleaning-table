@@ -76,11 +76,9 @@ func (p *ExcelParser) ParseRooms(cell string) ([]int, error) {
 			}
 
 			for r := start; r <= end; r++ {
-				// ユーザーが 149~201 のように指定した場合に 150-199 のような無効な部屋をスキップ、またはエラーにする。
-				// 仕様上「指定するときは必ず昇順」となっており、有効な部屋は 1F~9F、各階 01~49。
-				// 149~201 と指定された場合 150 などが含まれるため、すべての生成された部屋を検証する。
+				// ユーザーが 149~201 のように指定した場合に 150-199 のような無効な部屋をスキップする
 				if err := validateRoom(r); err != nil {
-					return nil, err
+					continue
 				}
 				if seen[r] {
 					return nil, fmt.Errorf("duplicate room number: %d", r)
@@ -215,7 +213,13 @@ func (p *ExcelParser) ParseExcelFile(filePath string) (*ExcelData, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open excel file: %w", err)
 	}
-	defer f.Close()
+	defer func() {
+		if closeErr := f.Close(); closeErr != nil {
+			// ロギングなどを行うことも可能だが、単純に無視する場合は以下のようにする
+			// 実際には logger などで警告を出力するのが望ましい
+			LogWarn("Failed to close excel file", "エクセルファイルのクローズに失敗しました", "error", closeErr)
+		}
+	}()
 
 	sheets := f.GetSheetList()
 	if len(sheets) == 0 {
