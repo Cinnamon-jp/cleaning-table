@@ -6,18 +6,18 @@ import (
 )
 
 func TestGeneratePDF(t *testing.T) {
-	// テスト用のモックデータ
+	// テスト用のモックデータ（複数階、多数の部屋を含む）
 	mockResult := &ShuffleResult{
 		Columns: []ColumnResult{
 			{
 				AssignedRoles: []AssignedRole{
-					{RoleName: "ゴミ分別", Rooms: []int{101, 102}},
-					{RoleName: "トイレ", Rooms: []int{103, 104, 105}},
+					{RoleName: "ゴミ分別", Rooms: []int{101, 202, 303, 404}},
+					{RoleName: "トイレ", Rooms: []int{105, 110, 510, 949}},
 				},
 			},
 			{
 				AssignedRoles: []AssignedRole{
-					{RoleName: "フロア", Rooms: []int{201, 202, 203}},
+					{RoleName: "フロア", Rooms: []int{201, 302, 403, 848}},
 				},
 			},
 		},
