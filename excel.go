@@ -55,20 +55,24 @@ func (p *ExcelParser) ParseRooms(cell string) ([]int, error) {
 	var rooms []int
 	seen := make(map[int]bool)
 
-	for _, part := range parts {
-		if strings.Contains(part, "~") {
-			rangeParts := strings.Split(part, "~")
-			if len(rangeParts) != 2 {
-				return nil, fmt.Errorf("invalid range format: %q", part)
-			}
+	addRoom := func(r int) error {
+		if seen[r] {
+			return fmt.Errorf("duplicate room number: %d", r)
+		}
+		seen[r] = true
+		rooms = append(rooms, r)
+		return nil
+	}
 
-			start, err := strconv.Atoi(rangeParts[0])
+	for _, part := range parts {
+		if before, after, found := strings.Cut(part, "~"); found {
+			start, err := strconv.Atoi(before)
 			if err != nil {
-				return nil, fmt.Errorf("invalid start room number: %q", rangeParts[0])
+				return nil, fmt.Errorf("invalid start room number: %q", before)
 			}
-			end, err := strconv.Atoi(rangeParts[1])
+			end, err := strconv.Atoi(after)
 			if err != nil {
-				return nil, fmt.Errorf("invalid end room number: %q", rangeParts[1])
+				return nil, fmt.Errorf("invalid end room number: %q", after)
 			}
 
 			if start >= end {
@@ -80,11 +84,9 @@ func (p *ExcelParser) ParseRooms(cell string) ([]int, error) {
 				if err := validateRoom(r); err != nil {
 					continue
 				}
-				if seen[r] {
-					return nil, fmt.Errorf("duplicate room number: %d", r)
+				if err := addRoom(r); err != nil {
+					return nil, err
 				}
-				seen[r] = true
-				rooms = append(rooms, r)
 			}
 		} else {
 			r, err := strconv.Atoi(part)
@@ -94,11 +96,9 @@ func (p *ExcelParser) ParseRooms(cell string) ([]int, error) {
 			if err := validateRoom(r); err != nil {
 				return nil, err
 			}
-			if seen[r] {
-				return nil, fmt.Errorf("duplicate room number: %d", r)
+			if err := addRoom(r); err != nil {
+				return nil, err
 			}
-			seen[r] = true
-			rooms = append(rooms, r)
 		}
 	}
 	return rooms, nil
@@ -128,17 +128,15 @@ func (p *ExcelParser) ParseRole(cell string) (Role, error) {
 		return Role{}, nil // 空のセル
 	}
 
-	parts := strings.Split(cell, "*")
-	if len(parts) != 2 {
+	roleName, countStr, found := strings.Cut(cell, "*")
+	if !found {
 		return Role{}, fmt.Errorf("invalid role format: %q", cell)
 	}
 
-	roleName := parts[0]
 	if roleName == "" {
 		return Role{}, fmt.Errorf("role name cannot be empty: %q", cell)
 	}
 
-	countStr := parts[1]
 	if countStr == "?" {
 		return Role{Name: roleName, Count: -1}, nil
 	}
@@ -239,9 +237,9 @@ func (p *ExcelParser) ParseExcelFile(filePath string) (*ExcelData, error) {
 			continue // 空の列
 		}
 
-		colName, err := excelize.ColumnNumberToName(colIdx + 1)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get column name: %w", err)
+		colName, colErr := excelize.ColumnNumberToName(colIdx + 1)
+		if colErr != nil {
+			return nil, fmt.Errorf("failed to get column name: %w", colErr)
 		}
 
 		// セル A1 は 1行目
@@ -251,9 +249,9 @@ func (p *ExcelParser) ParseExcelFile(filePath string) (*ExcelData, error) {
 			continue // 1行目に部屋がない場合、列をスキップする
 		}
 
-		rooms, err := p.ParseRooms(roomStr)
-		if err != nil {
-			return nil, fmt.Errorf("cell %s: %v", cellName, err)
+		rooms, parseErr := p.ParseRooms(roomStr)
+		if parseErr != nil {
+			return nil, fmt.Errorf("cell %s: %v", cellName, parseErr)
 		}
 
 		colData := ColumnData{
@@ -268,15 +266,15 @@ func (p *ExcelParser) ParseExcelFile(filePath string) (*ExcelData, error) {
 			}
 
 			cellName := fmt.Sprintf("%s%d", colName, rowIdx+1)
-			role, err := p.ParseRole(roleStr)
-			if err != nil {
-				return nil, fmt.Errorf("cell %s: %v", cellName, err)
+			role, roleErr := p.ParseRole(roleStr)
+			if roleErr != nil {
+				return nil, fmt.Errorf("cell %s: %v", cellName, roleErr)
 			}
 			colData.Roles = append(colData.Roles, role)
 		}
 
-		if err := p.ValidateColumn(&colData); err != nil {
-			return nil, fmt.Errorf("column %s error: %v", colName, err)
+		if valErr := p.ValidateColumn(&colData); valErr != nil {
+			return nil, fmt.Errorf("column %s error: %v", colName, valErr)
 		}
 
 		excelData.Columns = append(excelData.Columns, colData)

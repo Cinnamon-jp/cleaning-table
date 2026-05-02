@@ -4,5 +4,5 @@ import (
 	_ "embed"
 )
 
-//go:embed fonts/NotoSansJP-Regular.ttf
-var NotoSansJPRegularBytes []byte
+//go:embed fonts/ipaexg00401/ipaexg.ttf
+var IPAexGothicBytes []byte

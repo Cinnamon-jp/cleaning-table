@@ -2,6 +2,7 @@ package main
 
 import (
 	"math/rand/v2"
+	"slices"
 )
 
 // AssignedRole は役職と割り当てられた部屋のリストを保持します。
@@ -32,22 +33,20 @@ func ShuffleAssign(data *ExcelData, r *rand.Rand) *ShuffleResult {
 
 	for _, col := range data.Columns {
 		// 部屋のスライスをコピーしてシャッフル
-		roomsCopy := make([]int, len(col.Rooms))
-		copy(roomsCopy, col.Rooms)
+		roomsCopy := slices.Clone(col.Rooms)
 
 		// シャッフル
 		r.Shuffle(len(roomsCopy), func(i, j int) {
 			roomsCopy[i], roomsCopy[j] = roomsCopy[j], roomsCopy[i]
 		})
 
-		var assignedRoles []AssignedRole
+		assignedRoles := make([]AssignedRole, 0, len(col.Roles))
 		currentIndex := 0
 
 		for _, role := range col.Roles {
 			count := role.Count
-			// count分だけ切り出し
-			assignedRooms := make([]int, count)
-			copy(assignedRooms, roomsCopy[currentIndex:currentIndex+count])
+			// count分だけ切り出し（roomsCopyは新規割り当てなので、スライスを保持するだけで安全）
+			assignedRooms := roomsCopy[currentIndex : currentIndex+count]
 
 			assignedRoles = append(assignedRoles, AssignedRole{
 				RoleName: role.Name,

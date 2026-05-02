@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"reflect"
 	"testing"
 )
@@ -305,6 +306,10 @@ func TestValidateColumn(t *testing.T) {
 }
 
 func TestParseExcelFile(t *testing.T) {
+	if _, err := os.Stat("test.xlsx"); os.IsNotExist(err) {
+		t.Skip("test.xlsx does not exist, skipping test")
+	}
+
 	parser := NewExcelParser()
 	data, err := parser.ParseExcelFile("test.xlsx")
 	if err != nil {

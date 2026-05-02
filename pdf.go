@@ -42,18 +42,18 @@ func GeneratePDF(result *ShuffleResult, outputPath string) error {
 		WithBottomMargin(10).
 		WithCustomFonts([]*entity.CustomFont{
 			{
-				Family: "NotoSansJP",
+				Family: "IPAexGothic",
 				Style:  fontstyle.Normal,
-				Bytes:  NotoSansJPRegularBytes,
+				Bytes:  IPAexGothicBytes,
 			},
 			{
-				Family: "NotoSansJP",
+				Family: "IPAexGothic",
 				Style:  fontstyle.Bold,
-				Bytes:  NotoSansJPRegularBytes,
+				Bytes:  IPAexGothicBytes,
 			},
 		}).
 		WithDefaultFont(&props.Font{
-			Family: "NotoSansJP",
+			Family: "IPAexGothic",
 			Style:  fontstyle.Normal,
 			Size:   6, // 1ページに収めるためにフォントサイズを小さくする
 		})
@@ -80,11 +80,10 @@ func GeneratePDF(result *ShuffleResult, outputPath string) error {
 	}
 
 	// ヘッダー行 (空白, 1F, 2F, ..., 9F, 空白)
-	headerCols := []core.Col{
-		text.NewCol(1, "", props.Text{
-			Align: align.Center,
-		}).WithStyle(cellStyle),
-	}
+	headerCols := make([]core.Col, 0, 11)
+	headerCols = append(headerCols, text.NewCol(1, "", props.Text{
+		Align: align.Center,
+	}).WithStyle(cellStyle))
 	for f := 1; f <= 9; f++ {
 		headerCols = append(headerCols, text.NewCol(1, fmt.Sprintf("%dF", f), props.Text{
 			Align: align.Center,
@@ -100,12 +99,12 @@ func GeneratePDF(result *ShuffleResult, outputPath string) error {
 
 	// 各行 (01 ~ 49)
 	for r := 1; r <= 49; r++ {
-		rowCols := []core.Col{
-			text.NewCol(1, fmt.Sprintf("%02d", r), props.Text{
-				Align: align.Center,
-				Top:   1.5,
-			}).WithStyle(cellStyle),
-		}
+		rowCols := make([]core.Col, 0, 11)
+		rStr := fmt.Sprintf("%02d", r)
+		rowCols = append(rowCols, text.NewCol(1, rStr, props.Text{
+			Align: align.Center,
+			Top:   1.5,
+		}).WithStyle(cellStyle))
 
 		for f := 1; f <= 9; f++ {
 			roomNum := f*100 + r
@@ -119,7 +118,7 @@ func GeneratePDF(result *ShuffleResult, outputPath string) error {
 			}).WithStyle(cellStyle))
 		}
 
-		rowCols = append(rowCols, text.NewCol(1, fmt.Sprintf("%02d", r), props.Text{
+		rowCols = append(rowCols, text.NewCol(1, rStr, props.Text{
 			Align: align.Center,
 			Top:   1.5,
 		}).WithStyle(cellStyle))
