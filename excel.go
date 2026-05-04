@@ -2,12 +2,13 @@ package main
 
 import (
 	"cleaning-table/util"
+	"errors"
 
 	"github.com/xuri/excelize/v2"
 )
 
-// GetExcelData は指定されたパスのエクセルファイルを読み込み、内容を2次元スライスとして返します。
-func GetExcelData(path string) ([][]string, error) {
+// getExcelData は指定されたパスのエクセルファイルを読み込み、内容を2次元スライスとして返します。
+func getExcelData(path string) ([][]string, error) {
 	return readExcelFile(path)
 }
 
@@ -32,10 +33,22 @@ func readExcelFile(path string) ([][]string, error) {
 			}
 	}()
 
-	// 使用するシートを選択
+	// シートリストを取得
 	sheetList := f.GetSheetList()
-	var sheetToUse string
-	if len(sheetList) != 1 {
+	if len(sheetList) == 0 {
+		util.Logger.Error(
+			"excel.go: excelize.GetSheetList()",
+			"No sheets found in excel file",
+			"エクセルファイルにシートが見つかりませんでした",
+		)
+		return nil, errors.New("no sheets found in excel file")
+	}
+
+	// シートリストの数が1以上なら使用するシートを選択
+	sheetToUse := ""
+	if len(sheetList) == 1 {
+		sheetToUse = sheetList[0]
+	} else {
 		sheetToUse, err = util.ChooseOne(
 			"Choose the sheet you want to use. / 使用するシートを選択してください。",
 			sheetList,
@@ -48,8 +61,6 @@ func readExcelFile(path string) ([][]string, error) {
 			)
 			return nil, err
 		}
-	} else {
-		sheetToUse = sheetList[0]
 	}
 
 	rows, err := f.GetRows(sheetToUse)
