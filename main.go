@@ -7,7 +7,10 @@ import (
 )
 
 func main() {
-	
+	if err := run(); err != nil {
+		util.Logger.Error("main.go: main()", err.Error(), "予期せぬエラーが発生しました")
+		os.Exit(1)
+	}
 }
 
 func run() error {
@@ -52,7 +55,13 @@ func run() error {
 		return err
 	}
 
+	// 各列の部屋番号に対してタスクをランダムに割り振る
+	assignments := assignTasks(*excelData)
 	
+	// 今後の処理（PDF出力など）で assignments を使用する想定
+	_ = assignments
+
+	return nil
 }
 
 // findExcelFiles はカレントディレクトリから .xlsx ファイルを検索します。
