@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cleaning-table/util"
 	"os"
 	"path/filepath"
 )
@@ -11,8 +12,50 @@ func main() {
 
 func run() error {
 	
+	excelFiles, err := findExcelFiles()
+	if (err != nil) || (len(excelFiles) == 0) {
+		util.Logger.Error(
+			"main.go: findExcelFiles()",
+			"Couldn't find excel files",
+			"エクセルファイルを見つけることができませんでした",
+		)
+		return err
+	}
+
+	// 同じ階層にエクセルファイルが複数存在する場合は使用するファイルを選択させる
+	excelFileToUse := ""
+	if len(excelFiles) == 1 {
+		excelFileToUse = excelFiles[0]
+	} else {
+		excelFileToUse, err = util.ChooseOne(
+			"Choose the excel file you want to use. / 使用するエクセルファイルを選択してください。",
+			excelFiles,
+		)
+		if err != nil {
+			util.Logger.Error(
+				"main.go: util.ChooseOne()",
+				"Couldn't choose excel file",
+				"エクセルファイルを選択できませんでした",
+			)
+			return err
+		}
+	}
+
+	// エクセルファイルからデータを取得
+	excelData, err := getExcelData(excelFileToUse)
+	if err != nil {
+		util.Logger.Error(
+			"main.go: GetExcelData()",
+			"Couldn't get excel data",
+			"エクセルデータの内容を取得できませんでした",
+		)
+		return err
+	}
+
+	
 }
 
+// findExcelFiles はカレントディレクトリから .xlsx ファイルを検索します。
 func findExcelFiles() ([]string, error) {
 	entries, err := os.ReadDir(".")
 	if err != nil {
