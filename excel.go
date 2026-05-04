@@ -13,8 +13,20 @@ type UnfoldedExcelData struct {
 }
 
 // getExcelData は指定されたパスのエクセルファイルを読み込み、内容を2次元スライスとして返します。
-func getExcelData(path string) ([][]string, error) {
-	return readExcelFile(path)
+func getExcelData(path string) (*UnfoldedExcelData, error) {
+	excel, err := readExcelFile(path)
+	if err != nil {
+		util.Logger.Error(
+			"excel.go: readExcelFile()",
+			"Couldn't read excel file",
+			"エクセルファイルの内容を読み込むことができませんでした",
+		)
+		return nil, err
+	}
+	
+	// コメント行を削除
+	excel = deleteCommentRow(excel)
+	
 }
 
 // readExcelFile は指定されたパスのエクセルファイルを読み込み、内容を2次元スライスとして返します。
@@ -95,6 +107,16 @@ func deleteCommentRow(data [][]string) [][]string {
 
 // unfoldExcelData は部屋番号範囲と役職数を展開する
 func unfoldExcelData(data [][]string) (UnfoldedExcelData, error) {
-	
+	if len(data) == 0 {
+		util.Logger.Error(
+			"excel.go: unfoldExcelData()",
+			"Empty data",
+			"データが空です",
+		)
+		return UnfoldedExcelData{}, errors.New("empty data")
+	}
+
+	roomNumberStrings := data[0]
+	taskStrings := data[1:]
 }
 
