@@ -7,6 +7,11 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+type UnfoldedExcelData struct {
+	roomNumbers [][]int
+	tasks [][]string
+}
+
 // getExcelData は指定されたパスのエクセルファイルを読み込み、内容を2次元スライスとして返します。
 func getExcelData(path string) ([][]string, error) {
 	return readExcelFile(path)
@@ -76,7 +81,8 @@ func readExcelFile(path string) ([][]string, error) {
 	return rows, nil
 }
 
-// checkExcelSyntax はエクセルファイルの文法をチェックします。
-// func checkExcelSyntax(data [][]*string) error {
+// unfoldExcelData はででｄでデータの部屋番号範囲、役職数を展開する
+func unfoldExcelData(data [][]string) (UnfoldedExcelData, error) {
 	
-// }
+}
+
