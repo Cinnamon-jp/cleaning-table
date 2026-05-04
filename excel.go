@@ -81,7 +81,19 @@ func readExcelFile(path string) ([][]string, error) {
 	return rows, nil
 }
 
-// unfoldExcelData はででｄでデータの部屋番号範囲、役職数を展開する
+// deleteCommentRow はエクセルデータのコメント行を削除する
+func deleteCommentRow(data [][]string) [][]string {
+	var result [][]string
+	for _, row := range data {
+		if len(row) > 0 && row[0] == "#" {
+			continue
+		}
+		result = append(result, row)
+	}
+	return result
+}
+
+// unfoldExcelData は部屋番号範囲と役職数を展開する
 func unfoldExcelData(data [][]string) (UnfoldedExcelData, error) {
 	
 }
