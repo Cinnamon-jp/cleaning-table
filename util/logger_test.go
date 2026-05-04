@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"bytes"
@@ -127,10 +127,10 @@ func TestNewCustomLogger_Default(t *testing.T) {
 }
 
 func TestLogger_Initialized(t *testing.T) {
-	if logger == nil {
-		t.Fatal("logger should be initialized by init function")
+	if Logger == nil {
+		t.Fatal("Logger should be initialized by init function")
 	}
-	if logger.logger == nil {
-		t.Error("logger.logger should not be nil")
+	if Logger.logger == nil {
+		t.Error("Logger.logger should not be nil")
 	}
 }

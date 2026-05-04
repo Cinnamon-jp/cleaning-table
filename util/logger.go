@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"log/slog"
@@ -6,11 +6,11 @@ import (
 
 // Logger はアプリケーション全体で共有されるロガーのインスタンスです。
 // logger.go の init 関数によって自動的に初期化されます。
-var logger *CustomLogger
+var Logger *CustomLogger
 
 func init() {
 	// デフォルトの slog.Logger を使用して CustomLogger を初期化します。
-	logger = NewCustomLogger(nil)
+	Logger = NewCustomLogger(nil)
 }
 
 // CustomLogger は独自のフォーマットでログ出力を提供するロガーです。

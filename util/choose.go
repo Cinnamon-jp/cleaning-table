@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"errors"
@@ -17,7 +17,7 @@ var (
 // ユーザーが矢印キーで選択した要素を返します。
 func ChooseOne(prompt string, list []string) (string, error) {
 	if len(list) == 0 {
-		logger.Error(
+		Logger.Error(
 			"choose.go: ChooseOne()",
 			"The list is empty",
 			"リストが空です",

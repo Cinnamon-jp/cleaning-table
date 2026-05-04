@@ -1,6 +1,8 @@
 package main
 
 import (
+	"cleaning-table/util"
+
 	"github.com/xuri/excelize/v2"
 )
 
@@ -13,7 +15,7 @@ func GetExcelData(path string) ([][]string, error) {
 func readExcelFile(path string) ([][]string, error) {
 	f, err := excelize.OpenFile(path)
 	if err != nil {
-		logger.Error(
+		util.Logger.Error(
 			"excel.go: excelize.OpenFile()",
 			"Couldn't open excel file",
 			"エクセルファイルを開くことができませんでした",
@@ -21,8 +23,8 @@ func readExcelFile(path string) ([][]string, error) {
 		return nil, err
 	}
 	defer func() {
-			if err := f.Close(); err != nil {
-				logger.Error(
+		if err := f.Close(); err != nil {
+				util.Logger.Error(
 					"excel.go: excelize.Close()",
 					"Couldn't close excel file",
 					"エクセルファイルを閉じることができませんでした",
@@ -34,12 +36,12 @@ func readExcelFile(path string) ([][]string, error) {
 	sheetList := f.GetSheetList()
 	var sheetToUse string
 	if len(sheetList) != 1 {
-		sheetToUse, err = ChooseOne(
+		sheetToUse, err = util.ChooseOne(
 			"Choose the sheet you want to use. / 使用するシートを選択してください。",
 			sheetList,
 		)
 		if err != nil {
-			logger.Error(
+			util.Logger.Error(
 				"excel.go: ChooseOne()",
 				"Couldn't choose sheet",
 				"シートを選択できませんでした",
@@ -52,7 +54,7 @@ func readExcelFile(path string) ([][]string, error) {
 
 	rows, err := f.GetRows(sheetToUse)
 	if err != nil {
-		logger.Error(
+		util.Logger.Error(
 			"excel.go: excelize.GetRows()",
 			"Couldn't get rows",
 			"行を取得できませんでした",
