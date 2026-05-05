@@ -47,3 +47,47 @@ func assignTasks(data UnfoldedExcelData) [][]Assignment {
 
 	return result
 }
+
+// groupByFloor は列ごとにグルーピングされた割り当て結果を、
+// 階ごと（1F〜9F）にグルーピングし直した2次元スライスとして返します。
+// 戻り値のインデックス 0 が 1F、インデックス 8 が 9F に対応します。
+// 各階には01〜49号室すべてが号室番号昇順で含まれ、
+// 割り当てがない部屋の Task は空文字列 "" となります。
+func groupByFloor(assignments [][]Assignment) [][]Assignment {
+	const numFloors = 9
+	const firstRoom = 1
+	const lastRoom = 49
+
+	// 各階01〜49号室の Assignment をあらかじめ生成する（Task は空文字列）
+	result := make([][]Assignment, numFloors)
+	for floor := 0; floor < numFloors; floor++ {
+		floorNum := floor + 1
+		floorAssignments := make([]Assignment, lastRoom-firstRoom+1)
+		for room := firstRoom; room <= lastRoom; room++ {
+			floorAssignments[room-firstRoom] = Assignment{
+				Room: floorNum*100 + room,
+				Task: "",
+			}
+		}
+		result[floor] = floorAssignments
+	}
+
+	// 全列の全 Assignment を走査し、該当する階・号室の Task を上書きする
+	for _, colAssignments := range assignments {
+		for _, a := range colAssignments {
+			floor := a.Room/100 - 1
+			room := a.Room % 100
+
+			if floor < 0 || floor >= numFloors {
+				continue
+			}
+			if room < firstRoom || room > lastRoom {
+				continue
+			}
+
+			result[floor][room-firstRoom].Task = a.Task
+		}
+	}
+
+	return result
+}
