@@ -61,8 +61,16 @@ func run() error {
 	// 階ごとにデータを整形する
 	floorAssignments := groupByFloor(assignments)
 
-	// 今後の処理（PDF出力など）で floorAssignments を使用する想定
-	_ = floorAssignments
+	// PDF出力
+	err = generatePDF(floorAssignments, "ipaexg.ttf")
+	if err != nil {
+		util.Logger.Error(
+			"main.go: generatePDF()",
+			"Failed to generate PDF",
+			"PDFの生成に失敗しました",
+		)
+		return err
+	}
 
 	return nil
 }
