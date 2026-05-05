@@ -57,9 +57,12 @@ func run() error {
 
 	// 各列の部屋番号に対してタスクをランダムに割り振る
 	assignments := assignTasks(*excelData)
-	
-	// 今後の処理（PDF出力など）で assignments を使用する想定
-	_ = assignments
+
+	// 階ごとにデータを整形する
+	floorAssignments := groupByFloor(assignments)
+
+	// 今後の処理（PDF出力など）で floorAssignments を使用する想定
+	_ = floorAssignments
 
 	return nil
 }
