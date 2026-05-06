@@ -45,7 +45,7 @@ func TestFindExcelFiles(t *testing.T) {
 	}
 
 	// ディレクトリであるが、拡張子が .xlsx のものを作成 (無視されることを確認するため)
-	if err := os.Mkdir("dummy_dir.xlsx", 0755); err != nil {
+	if err := os.Mkdir("dummy_dir.xlsx", 0o755); err != nil {
 		t.Fatalf("テストディレクトリの作成に失敗しました: %v", err)
 	}
 

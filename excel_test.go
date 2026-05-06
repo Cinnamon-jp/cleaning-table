@@ -45,8 +45,8 @@ func TestDeleteCommentRow(t *testing.T) {
 			},
 		},
 		{
-			name: "空のデータ",
-			input: [][]string{},
+			name:     "空のデータ",
+			input:    [][]string{},
 			expected: nil,
 		},
 		{

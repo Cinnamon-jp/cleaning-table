@@ -21,7 +21,7 @@ func assignTasks(data UnfoldedExcelData) [][]Assignment {
 	for i := 0; i < len(data.roomNumbers); i++ {
 		rooms := data.roomNumbers[i]
 		tasks := data.tasks[i]
-		
+
 		// タスクスライスをコピーしてシャッフルする
 		shuffledTasks := make([]string, len(tasks))
 		copy(shuffledTasks, tasks)

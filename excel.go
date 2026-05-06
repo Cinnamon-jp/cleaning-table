@@ -12,7 +12,7 @@ import (
 
 type UnfoldedExcelData struct {
 	roomNumbers [][]int
-	tasks [][]string
+	tasks       [][]string
 }
 
 // getExcelData は指定されたパスのエクセルファイルを読み込み、内容を2次元スライスとして返します。
@@ -26,7 +26,7 @@ func getExcelData(path string) (*UnfoldedExcelData, error) {
 		)
 		return nil, err
 	}
-	
+
 	// コメント行を削除
 	excel = deleteCommentRow(excel)
 
@@ -55,12 +55,12 @@ func readExcelFile(path string) ([][]string, error) {
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
-				util.Logger.Error(
-					"excel.go: excelize.Close()",
-					"Couldn't close excel file",
-					"エクセルファイルを閉じることができませんでした",
-				)
-			}
+			util.Logger.Error(
+				"excel.go: excelize.Close()",
+				"Couldn't close excel file",
+				"エクセルファイルを閉じることができませんでした",
+			)
+		}
 	}()
 
 	// シートリストを取得
@@ -278,4 +278,3 @@ func parseTasks(taskStrs []string, totalRooms int) ([]string, error) {
 
 	return result, nil
 }
-

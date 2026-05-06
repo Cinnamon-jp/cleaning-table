@@ -14,7 +14,6 @@ func main() {
 }
 
 func run() error {
-	
 	excelFiles, err := findExcelFiles()
 	if (err != nil) || (len(excelFiles) == 0) {
 		util.Logger.Error(

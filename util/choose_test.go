@@ -38,18 +38,18 @@ func TestChooseOne(t *testing.T) {
 			expectedErr: "the list is empty",
 		},
 		{
-			name:        "最初の要素を選択",
-			list:        []string{"Apple", "Banana", "Cherry"},
-			input:       "\r", // Enter キー
-			wantResult:  "Apple",
-			wantErr:     false,
+			name:       "最初の要素を選択",
+			list:       []string{"Apple", "Banana", "Cherry"},
+			input:      "\r", // Enter キー
+			wantResult: "Apple",
+			wantErr:    false,
 		},
 		{
-			name:        "二番目の要素を選択",
-			list:        []string{"Apple", "Banana", "Cherry"},
-			input:       "\x1b[B\r", // 下矢印キー + Enter キー
-			wantResult:  "Banana",
-			wantErr:     false,
+			name:       "二番目の要素を選択",
+			list:       []string{"Apple", "Banana", "Cherry"},
+			input:      "\x1b[B\r", // 下矢印キー + Enter キー
+			wantResult: "Banana",
+			wantErr:    false,
 		},
 	}
 

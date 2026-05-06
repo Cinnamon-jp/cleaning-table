@@ -28,21 +28,21 @@ func NewCustomLogger(l *slog.Logger) *CustomLogger {
 }
 
 // Info は Info レベルでログを出力します。
-func (c *CustomLogger) Info(title string, enBody string, jaBody string) {
+func (c *CustomLogger) Info(title, enBody, jaBody string) {
 	c.logger.Info(title, slog.String("en", enBody), slog.String("ja", jaBody))
 }
 
 // Error は Error レベルでログを出力します。
-func (c *CustomLogger) Error(title string, enBody string, jaBody string) {
+func (c *CustomLogger) Error(title, enBody, jaBody string) {
 	c.logger.Error(title, slog.String("en", enBody), slog.String("ja", jaBody))
 }
 
 // Warn は Warn レベルでログを出力します。
-func (c *CustomLogger) Warn(title string, enBody string, jaBody string) {
+func (c *CustomLogger) Warn(title, enBody, jaBody string) {
 	c.logger.Warn(title, slog.String("en", enBody), slog.String("ja", jaBody))
 }
 
 // Debug は Debug レベルでログを出力します。
-func (c *CustomLogger) Debug(title string, enBody string, jaBody string) {
+func (c *CustomLogger) Debug(title, enBody, jaBody string) {
 	c.logger.Debug(title, slog.String("en", enBody), slog.String("ja", jaBody))
 }
