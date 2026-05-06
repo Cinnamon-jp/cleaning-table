@@ -72,8 +72,8 @@ func TestBuildFloorPage(t *testing.T) {
 		}
 
 		// 期待される行数:
-		// タイトル行(1) + 間隔行(1) + ヘッダー行(1) + データ行(29) = 32行
-		expectedRows := 32
+		// タイトル行(1) + 間隔行(1) + ヘッダー行(1) + データ行(30) = 33行
+		expectedRows := 33
 		if len(rows) != expectedRows {
 			t.Errorf("expected %d rows, got %d", expectedRows, len(rows))
 		}
@@ -95,7 +95,7 @@ func TestBuildFloorPage(t *testing.T) {
 		}
 
 		rows := p.GetRows()
-		expectedRows := 32
+		expectedRows := 33
 		if len(rows) != expectedRows {
 			t.Errorf("expected %d rows, got %d", expectedRows, len(rows))
 		}
@@ -121,7 +121,7 @@ func TestBuildFloorPage(t *testing.T) {
 		}
 
 		rows := p.GetRows()
-		expectedRows := 32
+		expectedRows := 33
 		if len(rows) != expectedRows {
 			t.Errorf("expected %d rows, got %d", expectedRows, len(rows))
 		}

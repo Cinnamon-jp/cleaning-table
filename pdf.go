@@ -165,12 +165,12 @@ func buildFloorPage(floor int, assignments []Assignment) core.Page {
 	p.Add(headerRow)
 
 	// データ行の生成
-	// 左テーブル: 01〜29号室（インデックス 0〜28）= 29行
-	// 右テーブル: 30〜49号室（インデックス 29〜48）= 20行
-	// 最大行数は29行。右テーブルは20行目以降を空欄とする。
-	const leftTableRows = 29
-	const rightTableStartIndex = 29
-	const rightTableRows = 20
+	// 左テーブル: 01〜30号室（インデックス 0〜29）= 30行
+	// 右テーブル: 31〜49号室（インデックス 30〜48）= 19行
+	// 最大行数は30行。右テーブルは19行目以降を空欄とする。
+	const leftTableRows = 30
+	const rightTableStartIndex = 30
+	const rightTableRows = 19
 
 	for i := 0; i < leftTableRows; i++ {
 		// 左テーブルのデータ
