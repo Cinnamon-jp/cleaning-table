@@ -1,3 +1,4 @@
+// Package util はアプリケーション全体で共有されるユーティリティ関数を提供します。
 package util
 
 import (

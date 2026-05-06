@@ -54,7 +54,7 @@ func readExcelFile(path string) ([][]string, error) {
 		return nil, err
 	}
 	defer func() {
-		if err := f.Close(); err != nil {
+		if closeErr := f.Close(); closeErr != nil {
 			util.Logger.Error(
 				"excel.go: excelize.Close()",
 				"Couldn't close excel file",

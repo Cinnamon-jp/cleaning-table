@@ -18,13 +18,14 @@ func TestFindExcelFiles(t *testing.T) {
 	}
 	// テスト終了後に元のディレクトリに戻るようにする
 	defer func() {
-		if err := os.Chdir(originalWd); err != nil {
-			t.Errorf("元の作業ディレクトリへの復元に失敗しました: %v", err)
+		if chErr := os.Chdir(originalWd); chErr != nil {
+			t.Errorf("元の作業ディレクトリへの復元に失敗しました: %v", chErr)
 		}
 	}()
 
 	// 作業ディレクトリを一時ディレクトリに変更
-	if err := os.Chdir(tempDir); err != nil {
+	err = os.Chdir(tempDir)
+	if err != nil {
 		t.Fatalf("作業ディレクトリの変更に失敗しました: %v", err)
 	}
 
@@ -37,15 +38,18 @@ func TestFindExcelFiles(t *testing.T) {
 	}
 
 	for _, fileName := range filesToCreate {
-		file, err := os.Create(fileName)
-		if err != nil {
-			t.Fatalf("テストファイル %s の作成に失敗しました: %v", fileName, err)
+		file, createErr := os.Create(fileName)
+		if createErr != nil {
+			t.Fatalf("テストファイル %s の作成に失敗しました: %v", fileName, createErr)
 		}
-		file.Close()
+		if closeErr := file.Close(); closeErr != nil {
+			t.Fatalf("テストファイル %s のクローズに失敗しました: %v", fileName, closeErr)
+		}
 	}
 
 	// ディレクトリであるが、拡張子が .xlsx のものを作成 (無視されることを確認するため)
-	if err := os.Mkdir("dummy_dir.xlsx", 0o755); err != nil {
+	err = os.Mkdir("dummy_dir.xlsx", 0o755)
+	if err != nil {
 		t.Fatalf("テストディレクトリの作成に失敗しました: %v", err)
 	}
 

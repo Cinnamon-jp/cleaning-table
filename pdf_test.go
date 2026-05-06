@@ -181,7 +181,9 @@ func TestGeneratePDF(t *testing.T) {
 
 		// テスト後のクリーンアップ
 		t.Cleanup(func() {
-			os.Remove(generatedFile)
+			if err := os.Remove(generatedFile); err != nil {
+				t.Logf("failed to remove generated file: %v", err)
+			}
 		})
 	})
 }
