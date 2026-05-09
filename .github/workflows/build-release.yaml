@@ -1,41 +1,24 @@
 name: Build and Release
 
-on:
+on:  # トリガーイベント
   push:
-    branches:
-      - main
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:  # 手動トリガー
 
 permissions:
   contents: write
 
 jobs:
-  build-and-release:
+  build:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        include:
-          # Linux
-          - goos: linux
-            goarch: amd64
-            binary_suffix: ""
-          - goos: linux
-            goarch: arm64
-            binary_suffix: ""
-          # Windows
-          - goos: windows
-            goarch: amd64
-            binary_suffix: ".exe"
-          - goos: windows
-            goarch: arm64
-            binary_suffix: ".exe"
-          # macOS
-          - goos: darwin
-            goarch: amd64
-            binary_suffix: ""
-          - goos: darwin
-            goarch: arm64
-            binary_suffix: ""
+        go-version: ["1.26.2"]
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
+        binary_suffix: ["", ".exe", ""]  # Windowsは.exeを付与
 
     steps:
       - name: Checkout repository
@@ -44,7 +27,8 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.26.2"
+          go-version: ${{ matrix.go-version }} 
+          cache: true
 
       - name: Build binary
         env:
@@ -52,7 +36,7 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: "0"
         run: |
-          BINARY_NAME="cleaning-table-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.binary_suffix }}"
+          BINARY_NAME="${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.binary_suffix }}"
           go build -o "${BINARY_NAME}" -trimpath -ldflags="-s -w" .
 
       - name: Upload build artifact
@@ -62,7 +46,7 @@ jobs:
           path: cleaning-table-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.binary_suffix }}
 
   release:
-    needs: build-and-release
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
@@ -74,27 +58,12 @@ jobs:
         with:
           path: artifacts
 
-      - name: Generate release tag
-        id: tag
-        run: |
-          TAG="v$(date +'%Y.%m.%d')"
-          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
-
-      - name: Create release tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "${{ steps.tag.outputs.tag }}"
-          git push origin "${{ steps.tag.outputs.tag }}"
-
       - name: Prepare release assets
         run: |
           mkdir -p release-assets
 
-          # バイナリファイルを収集
           find artifacts -type f -exec cp {} release-assets/ \;
 
-          # ipaexg.ttf と test.xlsx をコピー
           cp ipaexg.ttf release-assets/
           cp test.xlsx release-assets/
 
@@ -103,22 +72,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          name: Release ${{ steps.tag.outputs.tag }}
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           body: |
-            ## 掃除当番表ジェネレーター
-
-            ### ダウンロード
-
-            | OS | アーキテクチャ | ファイル名 |
-            |---|---|---|
-            | Linux | amd64 | `cleaning-table-linux-amd64` |
-            | Linux | arm64 | `cleaning-table-linux-arm64` |
-            | Windows | amd64 | `cleaning-table-windows-amd64.exe` |
-            | Windows | arm64 | `cleaning-table-windows-arm64.exe` |
-            | macOS | amd64 | `cleaning-table-darwin-amd64` |
-            | macOS | arm64 | `cleaning-table-darwin-arm64` |
-
             ### 同梱ファイル
             - `ipaexg.ttf` - PDF出力用日本語フォント
             - `test.xlsx` - テスト用エクセルファイル
