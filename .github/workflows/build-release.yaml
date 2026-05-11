@@ -18,7 +18,6 @@ jobs:
         go-version: ["1.26.2"]
         goos: [linux, windows, darwin]
         goarch: [amd64, arm64]
-        binary_suffix: ["", ".exe", ""]  # Windowsは.exeを付与
 
     steps:
       - name: Checkout repository
@@ -36,14 +35,18 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: "0"
         run: |
-          BINARY_NAME="${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.binary_suffix }}"
+          BINARY_NAME="cleaning-table-${{ matrix.goos }}-${{ matrix.goarch }}"
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            BINARY_NAME="${BINARY_NAME}.exe"
+          fi
+          echo "BINARY_NAME=${BINARY_NAME}" >> $GITHUB_ENV
           go build -o "${BINARY_NAME}" -trimpath -ldflags="-s -w" .
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: cleaning-table-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: cleaning-table-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.binary_suffix }}
+          path: ${{ env.BINARY_NAME }}
 
   release:
     needs: build
@@ -62,8 +65,12 @@ jobs:
         run: |
           mkdir -p release-assets
 
-          find artifacts -type f -exec cp {} release-assets/ \;
+          # 各ディレクトリに分かれているバイナリを release-assets に集約
+          if [ -d artifacts ]; then
+            find artifacts -type f -exec cp {} release-assets/ \;
+          fi
 
+          # 必要なリソースファイルをコピー
           cp ipaexg.ttf release-assets/
           cp test.xlsx release-assets/
 
