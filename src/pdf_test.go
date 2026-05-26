@@ -1,4 +1,4 @@
-package main
+package src
 
 import (
 	"os"
@@ -133,7 +133,7 @@ func TestGeneratePDF(t *testing.T) {
 		// テスト用のfloorAssignments（9階分）
 		floorAssignments := makeTestFloorAssignments()
 
-		err := generatePDF(floorAssignments, "nonexistent_font.ttf")
+		err := GeneratePDF(floorAssignments, "nonexistent_font.ttf")
 		if err == nil {
 			t.Error("expected error for nonexistent font file, got nil")
 		}
@@ -143,12 +143,16 @@ func TestGeneratePDF(t *testing.T) {
 		// ipaexg.ttf がプロジェクトルートに存在することを前提とする
 		fontPath := "ipaexg.ttf"
 		if _, err := os.Stat(fontPath); os.IsNotExist(err) {
-			t.Skipf("font file %s not found, skipping test", fontPath)
+			// src/配下で実行された場合を想定して親ディレクトリも探索
+			fontPath = "../ipaexg.ttf"
+			if _, err := os.Stat(fontPath); os.IsNotExist(err) {
+				t.Skipf("font file %s not found, skipping test", fontPath)
+			}
 		}
 
 		floorAssignments := makeTestFloorAssignments()
 
-		err := generatePDF(floorAssignments, fontPath)
+		err := GeneratePDF(floorAssignments, fontPath)
 		if err != nil {
 			t.Fatalf("generatePDF returned error: %v", err)
 		}

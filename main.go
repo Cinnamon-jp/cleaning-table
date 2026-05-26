@@ -1,7 +1,8 @@
 package main
 
 import (
-	"cleaning-table/util"
+	"cleaning-table/src"
+	"cleaning-table/src/util"
 	"os"
 	"path/filepath"
 )
@@ -44,7 +45,7 @@ func run() error {
 	}
 
 	// エクセルファイルからデータを取得
-	excelData, err := getExcelData(excelFileToUse)
+	excelData, err := src.GetExcelData(excelFileToUse)
 	if err != nil {
 		util.Logger.Error(
 			"main.go: GetExcelData()",
@@ -55,13 +56,13 @@ func run() error {
 	}
 
 	// 各列の部屋番号に対してタスクをランダムに割り振る
-	assignments := assignTasks(*excelData)
+	assignments := src.AssignTasks(*excelData)
 
 	// 階ごとにデータを整形する
-	floorAssignments := groupByFloor(assignments)
+	floorAssignments := src.GroupByFloor(assignments)
 
 	// PDF出力
-	err = generatePDF(floorAssignments, "ipaexg.ttf")
+	err = src.GeneratePDF(floorAssignments, "ipaexg.ttf")
 	if err != nil {
 		util.Logger.Error(
 			"main.go: generatePDF()",

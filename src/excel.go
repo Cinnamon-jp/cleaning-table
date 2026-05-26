@@ -1,7 +1,8 @@
-package main
+// Package src は掃除当番表の生成やExcelファイルのパースなど、アプリケーションの主要なロジックを提供します。
+package src
 
 import (
-	"cleaning-table/util"
+	"cleaning-table/src/util"
 	"errors"
 	"fmt"
 	"strconv"
@@ -11,12 +12,12 @@ import (
 )
 
 type UnfoldedExcelData struct {
-	roomNumbers [][]int
-	tasks       [][]string
+	RoomNumbers [][]int
+	Tasks       [][]string
 }
 
-// getExcelData は指定されたパスのエクセルファイルを読み込み、内容を2次元スライスとして返します。
-func getExcelData(path string) (*UnfoldedExcelData, error) {
+// GetExcelData は指定されたパスのエクセルファイルを読み込み、内容を2次元スライスとして返します。
+func GetExcelData(path string) (*UnfoldedExcelData, error) {
 	excel, err := readExcelFile(path)
 	if err != nil {
 		util.Logger.Error(
@@ -171,8 +172,8 @@ func unfoldExcelData(data [][]string) (UnfoldedExcelData, error) {
 	}
 
 	return UnfoldedExcelData{
-		roomNumbers: roomNumbers,
-		tasks:       tasks,
+		RoomNumbers: roomNumbers,
+		Tasks:       tasks,
 	}, nil
 }
 

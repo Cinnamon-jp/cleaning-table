@@ -1,4 +1,4 @@
-package main
+package src
 
 import (
 	"reflect"
@@ -219,11 +219,11 @@ func TestUnfoldExcelData(t *testing.T) {
 				{"", "自室清掃*?"},
 			},
 			expected: UnfoldedExcelData{
-				roomNumbers: [][]int{
+				RoomNumbers: [][]int{
 					{101, 103, 104, 105},
 					{202, 204, 205, 206, 207, 209, 210, 211},
 				},
-				tasks: [][]string{
+				Tasks: [][]string{
 					{"フロア", "フロア", "フロア", "フロア"},
 					{"洗濯室", "洗濯室", "自室清掃", "自室清掃", "自室清掃", "自室清掃", "自室清掃", "自室清掃"},
 				},
@@ -261,11 +261,11 @@ func TestUnfoldExcelData(t *testing.T) {
 				return
 			}
 			if !tt.wantErr {
-				if !reflect.DeepEqual(got.roomNumbers, tt.expected.roomNumbers) {
-					t.Errorf("unfoldExcelData() roomNumbers = %v, want %v", got.roomNumbers, tt.expected.roomNumbers)
+				if !reflect.DeepEqual(got.RoomNumbers, tt.expected.RoomNumbers) {
+					t.Errorf("unfoldExcelData() RoomNumbers = %v, want %v", got.RoomNumbers, tt.expected.RoomNumbers)
 				}
-				if !reflect.DeepEqual(got.tasks, tt.expected.tasks) {
-					t.Errorf("unfoldExcelData() tasks = %v, want %v", got.tasks, tt.expected.tasks)
+				if !reflect.DeepEqual(got.Tasks, tt.expected.Tasks) {
+					t.Errorf("unfoldExcelData() Tasks = %v, want %v", got.Tasks, tt.expected.Tasks)
 				}
 			}
 		})

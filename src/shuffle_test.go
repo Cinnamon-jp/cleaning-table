@@ -1,4 +1,4 @@
-package main
+package src
 
 import (
 	"testing"
@@ -6,17 +6,17 @@ import (
 
 func TestAssignTasks(t *testing.T) {
 	data := UnfoldedExcelData{
-		roomNumbers: [][]int{
+		RoomNumbers: [][]int{
 			{101, 102, 103},
 			{201, 202},
 		},
-		tasks: [][]string{
+		Tasks: [][]string{
 			{"TaskA", "TaskB", "TaskC"},
 			{"TaskD", "TaskE"},
 		},
 	}
 
-	result := assignTasks(data)
+	result := AssignTasks(data)
 
 	// 列数の確認
 	if len(result) != 2 {
@@ -37,7 +37,7 @@ func TestAssignTasks(t *testing.T) {
 	for _, a := range result[0] {
 		taskMap0[a.Task]++
 	}
-	for _, task := range data.tasks[0] {
+	for _, task := range data.Tasks[0] {
 		if taskMap0[task] == 0 {
 			t.Errorf("task %s is missing or insufficient in col 0", task)
 		} else {
@@ -50,7 +50,7 @@ func TestAssignTasks(t *testing.T) {
 	for _, a := range result[1] {
 		taskMap1[a.Task]++
 	}
-	for _, task := range data.tasks[1] {
+	for _, task := range data.Tasks[1] {
 		if taskMap1[task] == 0 {
 			t.Errorf("task %s is missing or insufficient in col 1", task)
 		} else {
@@ -64,7 +64,7 @@ func TestAssignTasks(t *testing.T) {
 	for _, a := range result[0] {
 		roomMap0[a.Room] = true
 	}
-	for _, room := range data.roomNumbers[0] {
+	for _, room := range data.RoomNumbers[0] {
 		if !roomMap0[room] {
 			t.Errorf("room %d is missing in col 0", room)
 		}
@@ -75,7 +75,7 @@ func TestAssignTasks(t *testing.T) {
 	for _, a := range result[1] {
 		roomMap1[a.Room] = true
 	}
-	for _, room := range data.roomNumbers[1] {
+	for _, room := range data.RoomNumbers[1] {
 		if !roomMap1[room] {
 			t.Errorf("room %d is missing in col 1", room)
 		}
@@ -95,7 +95,7 @@ func TestGroupByFloor(t *testing.T) {
 			},
 		}
 
-		result := groupByFloor(input)
+		result := GroupByFloor(input)
 
 		// 9階分のスライスが返ること
 		if len(result) != 9 {
@@ -136,7 +136,7 @@ func TestGroupByFloor(t *testing.T) {
 			},
 		}
 
-		result := groupByFloor(input)
+		result := GroupByFloor(input)
 
 		// 1F の各要素が号室昇順であること
 		for i := 0; i < len(result[0])-1; i++ {
@@ -161,7 +161,7 @@ func TestGroupByFloor(t *testing.T) {
 	t.Run("空入力: 空のスライスでも9階分の空Taskスライスが返ること", func(t *testing.T) {
 		input := [][]Assignment{}
 
-		result := groupByFloor(input)
+		result := GroupByFloor(input)
 
 		if len(result) != 9 {
 			t.Fatalf("expected 9 floors, got %d", len(result))
@@ -189,7 +189,7 @@ func TestGroupByFloor(t *testing.T) {
 			},
 		}
 
-		result := groupByFloor(input)
+		result := GroupByFloor(input)
 
 		// 5F（インデックス4）にのみタスクが存在すること
 		if result[4][0].Task != "タスクX" {
@@ -227,7 +227,7 @@ func TestGroupByFloor(t *testing.T) {
 		}
 		input = append(input, col)
 
-		result := groupByFloor(input)
+		result := GroupByFloor(input)
 
 		if len(result) != 9 {
 			t.Fatalf("expected 9 floors, got %d", len(result))

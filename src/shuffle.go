@@ -1,4 +1,4 @@
-package main
+package src
 
 import (
 	"math/rand"
@@ -11,16 +11,16 @@ type Assignment struct {
 	Task string
 }
 
-// assignTasks は展開されたエクセルデータを受け取り、各列ごとにタスクをシャッフルして部屋番号に割り当てます。
-func assignTasks(data UnfoldedExcelData) [][]Assignment {
+// AssignTasks は展開されたエクセルデータを受け取り、各列ごとにタスクをシャッフルして部屋番号に割り当てます。
+func AssignTasks(data UnfoldedExcelData) [][]Assignment {
 	var result [][]Assignment
 
 	// 乱数生成器の初期化
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
-	for i := 0; i < len(data.roomNumbers); i++ {
-		rooms := data.roomNumbers[i]
-		tasks := data.tasks[i]
+	for i := 0; i < len(data.RoomNumbers); i++ {
+		rooms := data.RoomNumbers[i]
+		tasks := data.Tasks[i]
 
 		// タスクスライスをコピーしてシャッフルする
 		shuffledTasks := make([]string, len(tasks))
@@ -48,12 +48,12 @@ func assignTasks(data UnfoldedExcelData) [][]Assignment {
 	return result
 }
 
-// groupByFloor は列ごとにグルーピングされた割り当て結果を、
+// GroupByFloor は列ごとにグルーピングされた割り当て結果を、
 // 階ごと（1F〜9F）にグルーピングし直した2次元スライスとして返します。
 // 戻り値のインデックス 0 が 1F、インデックス 8 が 9F に対応します。
 // 各階には01〜49号室すべてが号室番号昇順で含まれ、
 // 割り当てがない部屋の Task は空文字列 "" となります。
-func groupByFloor(assignments [][]Assignment) [][]Assignment {
+func GroupByFloor(assignments [][]Assignment) [][]Assignment {
 	const numFloors = 9
 	const firstRoom = 1
 	const lastRoom = 49

@@ -1,7 +1,7 @@
-package main
+package src
 
 import (
-	"cleaning-table/util"
+	"cleaning-table/src/util"
 	"fmt"
 	"os"
 	"time"
@@ -20,9 +20,9 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/props"
 )
 
-// generatePDF はシャッフル結果を受け取り、掃除当番表のPDFファイルを生成します。
+// GeneratePDF はシャッフル結果を受け取り、掃除当番表のPDFファイルを生成します。
 // 1ページごとに1階分を記載し、合計9ページ作成します。
-func generatePDF(floorAssignments [][]Assignment, fontPath string) error {
+func GeneratePDF(floorAssignments [][]Assignment, fontPath string) error {
 	// フォントファイルの読み込み
 	fontBytes, err := os.ReadFile(fontPath)
 	if err != nil {
