@@ -2,6 +2,7 @@
 package src
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 )
@@ -54,15 +55,13 @@ func removeComment(excelData [][]string) [][]string {
 	return result
 }
 
-// unfoldRoomNumber は文字列を受け取って、","で部屋番号を分割し、
-// 範囲指定された部屋番号を展開してintのスライスを返します。
-// 例: "101, 103:105, 107:110" -> [101, 103, 104, 105, 107, 108, 109, 110]
-func unfoldRoomNumber(s string) []int {
+// unfoldRoomNumber は文字列を受け取って部屋番号を分割し、範囲指定された部屋番号を展開してintのスライスを返す
+func unfoldRoomNumber(s string) ([]int, error) {
 	var result []int
 
 	// 空文字の場合は空のスライスを返す
 	if strings.TrimSpace(s) == "" {
-		return result
+		return result, nil
 	}
 
 	// カンマで分割
@@ -90,7 +89,13 @@ func unfoldRoomNumber(s string) []int {
 					for i := start; i <= end; i++ {
 						result = append(result, i)
 					}
+				} else {
+					Logger(Error, "convertExcel.go/unfoldRoomNumber()/err1 == nil && err2 == nil && start <= end", "Invalid range format in a Excel file", "Excelの範囲指定文法が不正です")
+					return nil, errors.New("Invalid range format in a Excel file")
 				}
+			} else {
+				Logger(Error, "convertExcel.go/unfoldRoomNumber()/len(rangeParts) == 2", "Invalid range format in a Excel file", "Excelの範囲指定文法が不正です")
+				return  nil, errors.New("Invalid range format in a Excel file")
 			}
 		} else {
 			// 単一の部屋番号
@@ -101,5 +106,5 @@ func unfoldRoomNumber(s string) []int {
 		}
 	}
 
-	return result
+	return result, nil
 }
