@@ -1,6 +1,11 @@
 // Package src はプログラムを構成する部品に分割して格納する
 package src
 
+import (
+	"strconv"
+	"strings"
+)
+
 // ConvertExcel はExcelから取り出したデータを処理しやすいように変換する
 func ConvertExcel(excelData [][]string) (convertedData [][]string, err error) {
 	// Excelデータの文法をチェックする
@@ -43,6 +48,56 @@ func removeComment(excelData [][]string) [][]string {
 			newRow := make([]string, len(row)-1)
 			copy(newRow, row[1:])
 			result = append(result, newRow)
+		}
+	}
+
+	return result
+}
+
+// unfoldRoomNumber は文字列を受け取って、","で部屋番号を分割し、
+// 範囲指定された部屋番号を展開してintのスライスを返します。
+// 例: "101, 103:105, 107:110" -> [101, 103, 104, 105, 107, 108, 109, 110]
+func unfoldRoomNumber(s string) []int {
+	var result []int
+
+	// 空文字の場合は空のスライスを返す
+	if strings.TrimSpace(s) == "" {
+		return result
+	}
+
+	// カンマで分割
+	parts := strings.Split(s, ",")
+
+	for _, part := range parts {
+		// 前後の空白を削除
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+
+		// ":"が含まれているか確認（範囲指定）
+		if strings.Contains(part, ":") {
+			rangeParts := strings.Split(part, ":")
+			if len(rangeParts) == 2 {
+				startStr := strings.TrimSpace(rangeParts[0])
+				endStr := strings.TrimSpace(rangeParts[1])
+
+				start, err1 := strconv.Atoi(startStr)
+				end, err2 := strconv.Atoi(endStr)
+
+				// パースに成功し、start <= end の場合のみ展開
+				if err1 == nil && err2 == nil && start <= end {
+					for i := start; i <= end; i++ {
+						result = append(result, i)
+					}
+				}
+			}
+		} else {
+			// 単一の部屋番号
+			num, err := strconv.Atoi(part)
+			if err == nil {
+				result = append(result, num)
+			}
 		}
 	}
 
