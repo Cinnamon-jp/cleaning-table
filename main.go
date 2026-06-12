@@ -67,6 +67,13 @@ func run() error {
 	fmt.Printf("取得したExcelデータ: %v\n", excelData) // dev
 
 	// Excelデータを変換する
+	var convertedData []src.PostSet
+	if convertedData, err = src.ConvertExcel(excelData); err != nil {
+		src.Logger(src.Error, "main.go/run()/src.ConvertExcel()", "Error when executing ConvertExcel()", "ConvertExcel()の実行中にエラーが発生しました")
+		return err
+	}
+
+	fmt.Printf("変換後のデータ: %v\n", convertedData) // dev
 
 	return nil
 }
