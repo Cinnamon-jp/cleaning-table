@@ -3,6 +3,7 @@ package main
 import (
 	"cleaning-table/src/excel"
 	"cleaning-table/src/model"
+	"cleaning-table/src/shuffle"
 	"cleaning-table/src/util"
 	"fmt"
 )
@@ -76,6 +77,15 @@ func run() error {
 	}
 
 	fmt.Printf("変換後のデータ: %v\n", convertedData) // dev
+
+	// 役職をシャッフル
+	var shuffledPostSet []model.ShuffledPostSet
+	if shuffledPostSet, err = shuffle.SimpleShuffle(convertedData); err != nil {
+		util.Logger(util.Error, "main.go/run()/shuffle.SimpleShuffle()", "Error when executing SimpleShuffle()", "SimpleShuffle()の実行中にエラーが発生しました")
+		return err
+	}
+
+	fmt.Printf("シャッフル後のデータ: %v\n", shuffledPostSet) // dev
 
 	return nil
 }

@@ -1,3 +1,4 @@
+// Package shuffle は役職をシャッフルする処理を格納する
 package shuffle
 
 import (
