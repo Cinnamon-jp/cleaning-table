@@ -37,9 +37,6 @@ const (
 	headerBgGray    = 217 // RGB値 (0-255)
 )
 
-// 出力ファイル名
-const outputFileName = "cleaning_table.pdf"
-
 // OutputPdf はシャッフルされた掃除当番データをPDFファイルに出力する。
 // 1ページに1階分のデータを記載し、データが存在する階のみページを作成する。
 // 各ページには「XF掃除当番表」のタイトルと、01〜29号室・30〜49号室の2テーブルを横並びで配置する。
@@ -80,6 +77,7 @@ func OutputPdf(data []model.ShuffledPostSet) error {
 	}
 
 	// PDF保存
+	outputFileName := util.Input("保存するPDFファイル名を入力してください: ") + ".pdf"
 	if err := pdf.WritePdf(outputFileName); err != nil {
 		util.Logger(util.Error, "output_pdf.go/OutputPdf()/pdf.WritePdf()", "Error when writing PDF file", "PDFファイルの書き込み中にエラーが発生しました")
 		return err
