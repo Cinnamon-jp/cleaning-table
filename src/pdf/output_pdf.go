@@ -4,6 +4,7 @@ package pdf
 import (
 	"cleaning-table/src/model"
 	"cleaning-table/src/util"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sort"
@@ -120,7 +121,8 @@ func loadFont(pdf *gopdf.GoPdf) error {
 	}
 
 	if len(ttfFiles) == 0 {
-		return fmt.Errorf("no TTF font files found in current directory / カレントディレクトリにTTFフォントファイルが見つかりません")
+		util.Logger(util.Warn, "output_pdf.go/loadFont()/len(ttfFiles) == 0", "no TTF font files found in current directory", "カレントディレクトリにTTFフォントファイルが見つかりません")
+		return errors.New("no TTF font files found in current directory / カレントディレクトリにTTFフォントファイルが見つかりません")
 	}
 
 	// フォントファイルの選択
@@ -153,8 +155,8 @@ func renderFloorPage(pdf *gopdf.GoPdf, floor int, entries []model.ShuffledPostSe
 		return err
 	}
 
-	// 01〜29号室と30〜49号室にデータを分割
-	leftEntries, rightEntries := splitEntries(floor, entries)
+	// データを部屋番号でインデックス化し、01〜49号室の全部屋リストを構築
+	leftEntries, rightEntries := buildFullRoomList(floor, entries)
 
 	// テーブル開始Y座標
 	tableStartY := marginTop + titleFontSize + titleMarginBottom
@@ -180,7 +182,7 @@ func drawTitle(pdf *gopdf.GoPdf, floor int) error {
 		return err
 	}
 
-	title := fmt.Sprintf("%dF掃除当番表", floor)
+	title := fmt.Sprintf("%dF清掃割り振り表", floor)
 
 	// タイトルのテキスト幅を計測して中央揃え
 	titleWidth, err := pdf.MeasureTextWidth(title)
@@ -199,17 +201,38 @@ func drawTitle(pdf *gopdf.GoPdf, floor int) error {
 	return nil
 }
 
-// splitEntries は部屋番号の下2桁に基づいて、01〜29号室と30〜49号室にデータを分割する。
-func splitEntries(floor int, entries []model.ShuffledPostSet) ([]model.ShuffledPostSet, []model.ShuffledPostSet) {
-	var left, right []model.ShuffledPostSet
+// buildFullRoomList は各階の01〜49号室の全部屋リストを構築する。
+// データに含まれる部屋はその掌除場所を表示し、含まれない部屋は掌除場所を空白とする。
+// 左テーブルは01〜29号室、右テーブルは30〜49号室を返す。
+func buildFullRoomList(floor int, entries []model.ShuffledPostSet) ([]model.ShuffledPostSet, []model.ShuffledPostSet) {
+	// データを部屋番号でインデックス化（高速検索用）
+	postMap := make(map[int]string)
 	for _, entry := range entries {
-		roomSuffix := entry.RoomNumber - floor*100
-		if roomSuffix >= 1 && roomSuffix <= 29 {
-			left = append(left, entry)
-		} else if roomSuffix >= 30 && roomSuffix <= 49 {
-			right = append(right, entry)
-		}
+		postMap[entry.RoomNumber] = entry.Post
 	}
+
+	// 01〜29号室（左テーブル）
+	left := make([]model.ShuffledPostSet, 0, 29)
+	for room := 1; room <= 29; room++ {
+		roomNumber := floor*100 + room
+		post := postMap[roomNumber] // データがなければゼロ値（空文字列）
+		left = append(left, model.ShuffledPostSet{
+			RoomNumber: roomNumber,
+			Post:       post,
+		})
+	}
+
+	// 30〜49号室（右テーブル）
+	right := make([]model.ShuffledPostSet, 0, 20)
+	for room := 30; room <= 49; room++ {
+		roomNumber := floor*100 + room
+		post := postMap[roomNumber]
+		right = append(right, model.ShuffledPostSet{
+			RoomNumber: roomNumber,
+			Post:       post,
+		})
+	}
+
 	return left, right
 }
 
