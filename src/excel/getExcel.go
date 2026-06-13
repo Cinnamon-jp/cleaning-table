@@ -1,6 +1,7 @@
-package src
+package excel
 
 import (
+	"cleaning-table/src/util"
 	"os"
 	"strings"
 )
@@ -9,7 +10,7 @@ import (
 func GetExcel(path string) ([]string, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		Logger(Error, "src/getExcel.go/GetExcel()/os.ReadDir()", "Failed to read directory", "ディレクトリの読み込みに失敗しました")
+		util.Logger(util.Error, "getExcel.go/GetExcel()/os.ReadDir()", "Failed to read directory", "ディレクトリの読み込みに失敗しました")
 		return nil, err
 	}
 

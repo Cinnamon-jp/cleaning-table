@@ -1,5 +1,5 @@
-// Package src はプログラムを構成する部品に分割して格納する
-package src
+// Package util はプログラムの汎用ユーティリティ関数を格納する
+package util
 
 import "github.com/AlecAivazis/survey/v2"
 

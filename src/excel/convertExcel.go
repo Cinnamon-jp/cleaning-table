@@ -1,7 +1,9 @@
-// Package src はプログラムを構成する部品に分割して格納する
-package src
+// Package excel はExcelファイルの読み込み・変換処理を格納する
+package excel
 
 import (
+	"cleaning-table/src/model"
+	"cleaning-table/src/util"
 	"errors"
 	"fmt"
 	"strconv"
@@ -9,31 +11,31 @@ import (
 )
 
 // ConvertExcel はExcelから取り出したデータを処理しやすいように変換する
-func ConvertExcel(excelData [][]string) (convertedData []PostSet, err error) {
+func ConvertExcel(excelData [][]string) (convertedData []model.PostSet, err error) {
 	// Excelデータの文法をチェックする
 	var isOK bool
 	if isOK, err = checkExcel(excelData); !isOK || err != nil {
-		Logger(Error, "convertExcel.go/ConvertExcel()/checkExcel()", "Error when executing checkExcel()", "checkExcel()の実行中にエラーが発生しました")
+		util.Logger(util.Error, "convertExcel.go/ConvertExcel()/checkExcel()", "Error when executing checkExcel()", "checkExcel()の実行中にエラーが発生しました")
 		return nil, err
 	}
 
 	// コメント列を削除
 	noCommentExcelData := removeComment(excelData)
 
-	var postSets []PostSet
+	var postSets []model.PostSet
 
 	for _, row := range noCommentExcelData {
 		// 部屋番号範囲の展開
 		unfoldedRoomNumber, err := unfoldRoomNumber(row[0])
 		if err != nil {
-			Logger(Error, "convertExcel.go/ConvertExcel()/unfoldRoomNumber()", "Error when executing unfoldRoomNumber()", "unfoldRoomNumber()の実行中にエラーが発生しました")
+			util.Logger(util.Error, "convertExcel.go/ConvertExcel()/unfoldRoomNumber()", "Error when executing unfoldRoomNumber()", "unfoldRoomNumber()の実行中にエラーが発生しました")
 			return nil, err
 		}
 
 		// 役職の名前と数の分解
 		unfoldedPosts, unfoldedPostCounts, questionIndex, err := unfoldPost(row[1:])
 		if err != nil {
-			Logger(Error, "convertExcel.go/ConvertExcel()/unfoldPost()", "Error when executing unfoldPost()", "unfoldPost()の実行中にエラーが発生しました")
+			util.Logger(util.Error, "convertExcel.go/ConvertExcel()/unfoldPost()", "Error when executing unfoldPost()", "unfoldPost()の実行中にエラーが発生しました")
 			return nil, err
 		}
 
@@ -48,13 +50,13 @@ func ConvertExcel(excelData [][]string) (convertedData []PostSet, err error) {
 			}
 			remainingCount := totalRooms - sumOtherCounts
 			if remainingCount < 0 {
-				Logger(Error, "convertExcel.go/ConvertExcel()/questionIndex", "Calculated remaining count is negative", "?の役職数の計算結果が負の値になりました")
+				util.Logger(util.Error, "convertExcel.go/ConvertExcel()/questionIndex", "Calculated remaining count is negative", "?の役職数の計算結果が負の値になりました")
 				return nil, fmt.Errorf("calculated remaining count is negative: totalRooms=%d, sumOtherCounts=%d", totalRooms, sumOtherCounts)
 			}
 			unfoldedPostCounts[questionIndex] = remainingCount
 		}
 
-		postSets = append(postSets, PostSet{
+		postSets = append(postSets, model.PostSet{
 			RoomNumbers: unfoldedRoomNumber,
 			Posts:       unfoldedPosts,
 			PostCounts:  unfoldedPostCounts,
@@ -129,18 +131,18 @@ func unfoldRoomNumber(s string) ([]int, error) {
 						result = append(result, i)
 					}
 				} else {
-					Logger(Warn, "convertExcel.go/unfoldRoomNumber()/err1 == nil && err2 == nil && start <= end", "Invalid range format in a Excel file", "Excelの範囲指定文法が不正です")
+					util.Logger(util.Warn, "convertExcel.go/unfoldRoomNumber()/err1 == nil && err2 == nil && start <= end", "Invalid range format in a Excel file", "Excelの範囲指定文法が不正です")
 					return nil, errors.New("invalid range format in a Excel file")
 				}
 			} else {
-				Logger(Warn, "convertExcel.go/unfoldRoomNumber()/len(rangeParts) == 2", "Invalid range format in a Excel file", "Excelの範囲指定文法が不正です")
+				util.Logger(util.Warn, "convertExcel.go/unfoldRoomNumber()/len(rangeParts) == 2", "Invalid range format in a Excel file", "Excelの範囲指定文法が不正です")
 				return nil, errors.New("invalid range format in a Excel file")
 			}
 		} else {
 			// 単一の部屋番号
 			num, err := strconv.Atoi(part)
 			if err != nil {
-				Logger(Warn, "convertExcel.go/unfoldRoomNumber()/strconv.Atoi", "Invalid room number format in a Excel file", "Excelの部屋番号の文法が不正です")
+				util.Logger(util.Warn, "convertExcel.go/unfoldRoomNumber()/strconv.Atoi", "Invalid room number format in a Excel file", "Excelの部屋番号の文法が不正です")
 				return nil, errors.New("invalid room number format in a Excel file")
 			}
 			result = append(result, num)
@@ -182,7 +184,7 @@ func unfoldPost(postsAndCounts []string) (posts []string, postCounts []int, ques
 
 		// どちらかが空文字の場合はエラー
 		if post == "" || postCountStr == "" {
-			Logger(Warn, "convertExcel.go/unfoldPost/post == \"\" || postCountStr == \"\"", "Invalid post format in a Excel file", "Excelの役職名の文法が不正です")
+			util.Logger(util.Warn, "convertExcel.go/unfoldPost/post == \"\" || postCountStr == \"\"", "Invalid post format in a Excel file", "Excelの役職名の文法が不正です")
 			return nil, nil, -1, errors.New("invalid post format in a Excel file")
 		}
 
@@ -199,7 +201,7 @@ func unfoldPost(postsAndCounts []string) (posts []string, postCounts []int, ques
 		// 役職数をスライスに追加
 		returnPostCount, err := strconv.Atoi(postCountStr)
 		if err != nil {
-			Logger(Error, "convertExcel.go/unfoldPost/strconv.Atoi", "Invalid post count format in a Excel file", "Excelの役職数の文法が不正です")
+			util.Logger(util.Error, "convertExcel.go/unfoldPost/strconv.Atoi", "Invalid post count format in a Excel file", "Excelの役職数の文法が不正です")
 			return nil, nil, -1, fmt.Errorf("invalid post count format in a Excel file: %w", err)
 		}
 		returnPostCounts = append(returnPostCounts, returnPostCount)
