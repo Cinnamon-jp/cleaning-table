@@ -31,10 +31,27 @@ func ConvertExcel(excelData [][]string) (convertedData []PostSet, err error) {
 		}
 
 		// 役職の名前と数の分解
-		unfoldedPosts, unfoldedPostCounts, err := unfoldPost(row[1:])
+		unfoldedPosts, unfoldedPostCounts, questionIndex, err := unfoldPost(row[1:])
 		if err != nil {
 			Logger(Error, "convertExcel.go/ConvertExcel()/unfoldPost()", "Error when executing unfoldPost()", "unfoldPost()の実行中にエラーが発生しました")
 			return nil, err
+		}
+
+		// `?` が含まれていた場合、RoomNumbersの個数から他の役職数の合計を引いて算出する
+		if questionIndex >= 0 {
+			totalRooms := len(unfoldedRoomNumber)
+			var sumOtherCounts int
+			for i, count := range unfoldedPostCounts {
+				if i != questionIndex {
+					sumOtherCounts += count
+				}
+			}
+			remainingCount := totalRooms - sumOtherCounts
+			if remainingCount < 0 {
+				Logger(Error, "convertExcel.go/ConvertExcel()/questionIndex", "Calculated remaining count is negative", "?の役職数の計算結果が負の値になりました")
+				return nil, fmt.Errorf("calculated remaining count is negative: totalRooms=%d, sumOtherCounts=%d", totalRooms, sumOtherCounts)
+			}
+			unfoldedPostCounts[questionIndex] = remainingCount
 		}
 
 		postSets = append(postSets, PostSet{
@@ -134,9 +151,11 @@ func unfoldRoomNumber(s string) ([]int, error) {
 }
 
 // unfoldPost は []役職名*役職数 を受け取って []役職名 と []役職数 を返す
-func unfoldPost(postsAndCounts []string) (posts []string, postCounts []int, err error) {
+// 役職数に "?" が含まれている場合、該当インデックスを questionIndex として返す(存在しない場合は -1)
+func unfoldPost(postsAndCounts []string) (posts []string, postCounts []int, questionIndex int, err error) {
 	var returnPosts []string
 	var returnPostCounts []int
+	questionIndex = -1
 
 	for _, postAndCount := range postsAndCounts {
 		// 不要な空白を削除
@@ -164,20 +183,27 @@ func unfoldPost(postsAndCounts []string) (posts []string, postCounts []int, err 
 		// どちらかが空文字の場合はエラー
 		if post == "" || postCountStr == "" {
 			Logger(Warn, "convertExcel.go/unfoldPost/post == \"\" || postCountStr == \"\"", "Invalid post format in a Excel file", "Excelの役職名の文法が不正です")
-			return nil, nil, errors.New("invalid post format in a Excel file")
+			return nil, nil, -1, errors.New("invalid post format in a Excel file")
 		}
 
 		// 役職名をスライスに追加
 		returnPosts = append(returnPosts, post)
 
+		// 役職数が "?" の場合は仮に0を入れて、インデックスを記録する
+		if postCountStr == "?" {
+			questionIndex = len(returnPostCounts)
+			returnPostCounts = append(returnPostCounts, 0)
+			continue
+		}
+
 		// 役職数をスライスに追加
 		returnPostCount, err := strconv.Atoi(postCountStr)
 		if err != nil {
 			Logger(Error, "convertExcel.go/unfoldPost/strconv.Atoi", "Invalid post count format in a Excel file", "Excelの役職数の文法が不正です")
-			return nil, nil, fmt.Errorf("invalid post count format in a Excel file: %w", err)
+			return nil, nil, -1, fmt.Errorf("invalid post count format in a Excel file: %w", err)
 		}
 		returnPostCounts = append(returnPostCounts, returnPostCount)
 	}
 
-	return returnPosts, returnPostCounts, nil
+	return returnPosts, returnPostCounts, questionIndex, nil
 }
