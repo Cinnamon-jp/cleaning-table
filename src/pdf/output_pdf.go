@@ -5,7 +5,6 @@ import (
 	"cleaning-table/src/model"
 	"cleaning-table/src/util"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 
@@ -40,16 +39,6 @@ const (
 
 // 出力ファイル名
 const outputFileName = "cleaning_table.pdf"
-
-// フォントパスの候補リスト（優先順位順）
-var fontPaths = []string{
-	filepath.Join(os.Getenv("HOME"), ".local", "share", "fonts", "NotoSansJP-VariableFont_wght.ttf"),
-	"/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-	"/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
-	filepath.Join(os.Getenv("HOME"), ".local", "share", "fonts", "ipaexg.ttf"),
-	"/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf",
-	"/usr/share/fonts/opentype/ipaexfont-gothic/ipaexg.ttf",
-}
 
 // OutputPdf はシャッフルされた掃除当番データをPDFファイルに出力する。
 // 1ページに1階分のデータを記載し、データが存在する階のみページを作成する。
@@ -121,20 +110,40 @@ func sortedFloorKeys(floorMap map[int][]model.ShuffledPostSet) []int {
 	return floors
 }
 
-// loadFont はPDFオブジェクトに日本語フォントを読み込む。
-// fontPaths の候補リストを順に試し、最初に見つかったフォントを使用する。
+// loadFont はカレントディレクトリ内のTTFフォントファイルを探索し、PDFオブジェクトに読み込む。
+// TTFファイルが複数見つかった場合は util.Select を使用してユーザーに選択させる。
+// TTFファイルが1つだけの場合はそのまま使用する。
 func loadFont(pdf *gopdf.GoPdf) error {
-	for _, fontPath := range fontPaths {
-		if _, err := os.Stat(fontPath); err == nil {
-			if err := pdf.AddTTFFont("japanese", fontPath); err != nil {
-				util.Logger(util.Warn, "output_pdf.go/loadFont()", fmt.Sprintf("Font file found but failed to load: %s", fontPath), fmt.Sprintf("フォントファイルは見つかりましたが読み込みに失敗しました: %s", fontPath))
-				continue
-			}
-			util.Logger(util.Info, "output_pdf.go/loadFont()", fmt.Sprintf("Font loaded: %s", fontPath), fmt.Sprintf("フォントを読み込みました: %s", fontPath))
-			return nil
-		}
+	// カレントディレクトリ内の.ttfファイルを探索
+	ttfFiles, err := filepath.Glob("*.ttf")
+	if err != nil {
+		util.Logger(util.Error, "output_pdf.go/loadFont()/filepath.Glob()", "Error when searching for TTF files", "TTFファイルの探索中にエラーが発生しました")
+		return err
 	}
-	return fmt.Errorf("no suitable Japanese font found / 日本語フォントが見つかりません。以下のパスにフォントを配置してください: %v", fontPaths)
+
+	if len(ttfFiles) == 0 {
+		return fmt.Errorf("no TTF font files found in current directory / カレントディレクトリにTTFフォントファイルが見つかりません")
+	}
+
+	// フォントファイルの選択
+	var selectedFont string
+	if len(ttfFiles) > 1 {
+		if selectedFont, err = util.Select("使用するフォントファイルを選択してください", ttfFiles); err != nil {
+			util.Logger(util.Error, "output_pdf.go/loadFont()/util.Select()", "Error when selecting font file", "フォントファイルの選択中にエラーが発生しました")
+			return err
+		}
+	} else {
+		selectedFont = ttfFiles[0]
+	}
+
+	// フォントの読み込み
+	if err := pdf.AddTTFFont("japanese", selectedFont); err != nil {
+		util.Logger(util.Error, "output_pdf.go/loadFont()/pdf.AddTTFFont()", fmt.Sprintf("Error when loading font: %s", selectedFont), fmt.Sprintf("フォントの読み込みに失敗しました: %s", selectedFont))
+		return err
+	}
+
+	util.Logger(util.Info, "output_pdf.go/loadFont()", fmt.Sprintf("Font loaded: %s", selectedFont), fmt.Sprintf("フォントを読み込みました: %s", selectedFont))
+	return nil
 }
 
 // renderFloorPage は1階分のページを描画する。
