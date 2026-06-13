@@ -6,3 +6,8 @@ type PostSet struct {
 	Posts       []string
 	PostCounts  []int
 }
+
+type ShuffledPostSet struct {
+	RoomNumber int
+	Post       string
+}
