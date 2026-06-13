@@ -3,6 +3,7 @@ package main
 import (
 	"cleaning-table/src/excel"
 	"cleaning-table/src/model"
+	"cleaning-table/src/pdf"
 	"cleaning-table/src/shuffle"
 	"cleaning-table/src/util"
 	"fmt"
@@ -86,6 +87,12 @@ func run() error {
 	}
 
 	fmt.Printf("シャッフル後のデータ: %v\n", shuffledPostSet) // dev
+
+	// PDF出力
+	if err = pdf.OutputPdf(shuffledPostSet); err != nil {
+		util.Logger(util.Error, "main.go/run()/pdf.OutputPdf()", "Error when executing OutputPdf()", "OutputPdf()の実行中にエラーが発生しました")
+		return err
+	}
 
 	return nil
 }
