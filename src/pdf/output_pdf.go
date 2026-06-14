@@ -84,7 +84,6 @@ func OutputPdf(data []model.ShuffledPostSet) error {
 		return err
 	}
 
-	util.Logger(util.Info, "output_pdf.go/OutputPdf()", fmt.Sprintf("PDF file created: %s", outputFileName), fmt.Sprintf("PDFファイルを作成しました: %s", outputFileName))
 	return nil
 }
 
@@ -142,7 +141,6 @@ func loadFont(pdf *gopdf.GoPdf) error {
 		return err
 	}
 
-	util.Logger(util.Info, "output_pdf.go/loadFont()", fmt.Sprintf("Font loaded: %s", selectedFont), fmt.Sprintf("フォントを読み込みました: %s", selectedFont))
 	return nil
 }
 
