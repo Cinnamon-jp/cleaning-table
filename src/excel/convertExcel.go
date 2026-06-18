@@ -2,11 +2,12 @@
 package excel
 
 import (
-	"cleaning-table/src/model"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+
+	"cleaning-table/src/model"
 )
 
 // ConvertExcel はExcelから取り出したデータを処理しやすいように変換する
@@ -62,7 +63,7 @@ func ConvertExcel(excelData [][]string) (convertedData []model.PostSet, err erro
 }
 
 // checkExcel はExcelの文法チェックを行う 未完成
-func checkExcel(excelData [][]string) (isOK bool, err error) {
+func checkExcel(_ [][]string) (isOK bool, err error) {
 	return true, nil
 }
 
@@ -80,12 +81,12 @@ func removeComment(excelData [][]string) [][]string {
 		// 列が1列以下しかない場合はスキップ
 		if len(row) <= 1 {
 			continue
-		} else {
-			// 1列目をスキップした要素をコピーして新しい行を作成
-			newRow := make([]string, len(row)-1)
-			copy(newRow, row[1:])
-			result = append(result, newRow)
 		}
+
+		// 1列目をスキップした要素をコピーして新しい行を作成
+		newRow := make([]string, len(row)-1)
+		copy(newRow, row[1:])
+		result = append(result, newRow)
 	}
 
 	return result
@@ -101,9 +102,7 @@ func unfoldRoomNumber(s string) ([]int, error) {
 	}
 
 	// カンマで分割
-	parts := strings.Split(s, ",")
-
-	for _, part := range parts {
+	for part := range strings.SplitSeq(s, ",") {
 		// 前後の空白を削除
 		part = strings.TrimSpace(part)
 		if part == "" {

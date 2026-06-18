@@ -1,13 +1,15 @@
+// Package main は掃除当番表アプリケーションのエントリーポイントを提供する
 package main
 
 import (
+	"fmt"
+	"log/slog"
+
 	"cleaning-table/src/excel"
 	"cleaning-table/src/model"
 	"cleaning-table/src/pdf"
 	"cleaning-table/src/shuffle"
 	"cleaning-table/src/util"
-	"fmt"
-	"log/slog"
 )
 
 func main() {

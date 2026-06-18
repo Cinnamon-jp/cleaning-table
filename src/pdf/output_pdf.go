@@ -2,13 +2,14 @@
 package pdf
 
 import (
-	"cleaning-table/src/model"
-	"cleaning-table/src/util"
 	"errors"
 	"fmt"
 	"log/slog"
 	"path/filepath"
 	"sort"
+
+	"cleaning-table/src/model"
+	"cleaning-table/src/util"
 
 	"github.com/signintech/gopdf"
 )

@@ -2,12 +2,14 @@
 package shuffle
 
 import (
-	"cleaning-table/src/model"
 	"errors"
-	"math/rand"
+	"math/rand/v2"
 	"slices"
+
+	"cleaning-table/src/model"
 )
 
+// SimpleShuffle は各PostSetの部屋番号をシャッフルし、各部屋に掃除場所を割り振ったShuffledPostSetのスライスを返す。
 func SimpleShuffle(postSets []model.PostSet) ([]model.ShuffledPostSet, error) {
 	var returnPostSet []model.ShuffledPostSet
 
@@ -52,7 +54,7 @@ func shuffleSlice[T any](slice []T) []T {
 
 	// Fisher-Yatesアルゴリズムでシャッフル
 	for i := len(result) - 1; i > 0; i-- {
-		j := rand.Intn(i + 1)
+		j := rand.IntN(i + 1) //nolint:gosec // セキュリティ用途ではなく掃除当番のシャッフルのため暗号論的乱数は不要
 		result[i], result[j] = result[j], result[i]
 	}
 
