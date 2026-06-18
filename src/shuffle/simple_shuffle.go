@@ -3,7 +3,6 @@ package shuffle
 
 import (
 	"cleaning-table/src/model"
-	"cleaning-table/src/util"
 	"errors"
 	"math/rand"
 	"slices"
@@ -15,8 +14,7 @@ func SimpleShuffle(postSets []model.PostSet) ([]model.ShuffledPostSet, error) {
 	for _, postSet := range postSets {
 		// 役職名の数と役職数の数が一致しているか確認
 		if len(postSet.Posts) != len(postSet.PostCounts) {
-			util.Logger(util.Error, "simple_shuffle.go/SimpleShuffle()/len(postSet.Posts) != len(postSet.PostCounts)", "Don't match posts and post counts", "役職名の数と役職数の数が一致しません")
-			return nil, errors.New("役職名の数と役職数の数が一致しません")
+			return nil, errors.New("mismatch between posts and post counts / 役職名と役職数の不一致")
 		}
 
 		// 役職名と役職数を用いて、役職を展開
@@ -31,8 +29,7 @@ func SimpleShuffle(postSets []model.PostSet) ([]model.ShuffledPostSet, error) {
 
 		// 数の不一致エラーを処理
 		if len(shuffledRoomNumbers) != len(posts) {
-			util.Logger(util.Error, "simple_shuffle.go/SimpleShuffle()/len(shuffledRoomNumbers) != len(posts)", "Don't match room numbers and posts", "部屋番号の数と役職数が一致しません")
-			return nil, errors.New("部屋番号の数と役職の数が一致しません")
+			return nil, errors.New("mismatch between room numbers and posts / 部屋番号と役職の不一致")
 		}
 
 		// 最終的な変数に代入

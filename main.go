@@ -6,11 +6,13 @@ import (
 	"cleaning-table/src/pdf"
 	"cleaning-table/src/shuffle"
 	"cleaning-table/src/util"
+	"fmt"
+	"log/slog"
 )
 
 func main() {
 	if err := run(); err != nil {
-		util.Logger(util.Error, "main.go/main()/run()", "Error when executing run()", "run()の実行中にエラーが発生しました")
+		slog.Error("error occurred / エラーが発生しました", slog.Any("err", err))
 	}
 }
 
@@ -19,16 +21,14 @@ func run() error {
 	var excelFiles []string
 	var err error
 	if excelFiles, err = excel.GetExcel("."); err != nil {
-		util.Logger(util.Error, "main.go/run()/excel.GetExcel()", "Error when executing GetExcel()", "GetExcel()の実行中にエラーが発生しました")
-		return err
+		return fmt.Errorf("getting Excel files / Excelファイル一覧の取得中: %w", err)
 	}
 
 	// 使用するExcelファイルを選択する
 	var selectedExcelFile string
 	if len(excelFiles) > 1 {
 		if selectedExcelFile, err = util.Select("使用するExcelファイルを選択してください", excelFiles); err != nil {
-			util.Logger(util.Error, "main.go/run()/util.Select()", "Error when executing Select()", "Select()の実行中にエラーが発生しました")
-			return err
+			return fmt.Errorf("selecting the Excel file / Excelファイルの選択中: %w", err)
 		}
 	} else {
 		selectedExcelFile = excelFiles[0]
@@ -37,16 +37,14 @@ func run() error {
 	// シートの一覧リストを取得
 	sheetList, err := excel.GetSheets(selectedExcelFile)
 	if err != nil {
-		util.Logger(util.Error, "main.go/run()/excel.GetSheets()", "Error when executing GetSheets()", "シート一覧の取得中にエラーが発生しました")
-		return err
+		return fmt.Errorf("getting sheets list / シート一覧の取得中: %w", err)
 	}
 
 	// 使用するシートを選択する
 	var selectedSheet string
 	if len(sheetList) > 1 {
 		if selectedSheet, err = util.Select("使用するシートを選択してください", sheetList); err != nil {
-			util.Logger(util.Error, "main.go/run()/util.Select()", "Error when executing Select()", "Select()の実行中にエラーが発生しました")
-			return err
+			return fmt.Errorf("selecting the sheet / シートの選択中: %w", err)
 		}
 	} else {
 		selectedSheet = sheetList[0]
@@ -55,28 +53,24 @@ func run() error {
 	// Excelデータの取得
 	var excelData [][]string
 	if excelData, err = excel.ReadExcel(selectedExcelFile, selectedSheet); err != nil {
-		util.Logger(util.Error, "main.go/run()/excel.ReadExcel()", "Error when executing ReadExcel()", "ReadExcel()の実行中にエラーが発生しました")
-		return err
+		return fmt.Errorf("reading the Excel data / Excelデータの読み込み中: %w", err)
 	}
 
 	// Excelデータを変換する
 	var convertedData []model.PostSet
 	if convertedData, err = excel.ConvertExcel(excelData); err != nil {
-		util.Logger(util.Error, "main.go/run()/excel.ConvertExcel()", "Error when executing ConvertExcel()", "ConvertExcel()の実行中にエラーが発生しました")
-		return err
+		return fmt.Errorf("converting the Excel data / Excelデータの変換中: %w", err)
 	}
 
 	// 役職をシャッフル
 	var shuffledPostSet []model.ShuffledPostSet
 	if shuffledPostSet, err = shuffle.SimpleShuffle(convertedData); err != nil {
-		util.Logger(util.Error, "main.go/run()/shuffle.SimpleShuffle()", "Error when executing SimpleShuffle()", "SimpleShuffle()の実行中にエラーが発生しました")
-		return err
+		return fmt.Errorf("shuffling the post sets / 役職セットのシャッフル中: %w", err)
 	}
 
 	// PDF出力
 	if err = pdf.OutputPdf(shuffledPostSet); err != nil {
-		util.Logger(util.Error, "main.go/run()/pdf.OutputPdf()", "Error when executing OutputPdf()", "OutputPdf()の実行中にエラーが発生しました")
-		return err
+		return fmt.Errorf("outputting the PDF / PDF出力中: %w", err)
 	}
 
 	return nil

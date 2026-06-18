@@ -1,21 +1,26 @@
 package excel
 
 import (
-	"cleaning-table/src/util"
+	"errors"
+	"fmt"
 
 	"github.com/xuri/excelize/v2"
 )
 
 // GetSheets は指定されたExcelファイルからシートの一覧リストを取得します。
-func GetSheets(filePath string) ([]string, error) {
-	f, err := excelize.OpenFile(filePath)
-	if err != nil {
-		util.Logger(util.Error, "getSheets.go/GetSheets()/excelize.OpenFile()", "Error when executing OpenFile()", "Excelファイルの読み込み中にエラーが発生しました")
-		return nil, err
+func GetSheets(filePath string) (sheets []string, err error) {
+	f, openErr := excelize.OpenFile(filePath)
+	if openErr != nil {
+		return nil, fmt.Errorf("opening the Excel file / Excelファイルの読み込み中: %w", openErr)
 	}
 	defer func() {
-		if err := f.Close(); err != nil {
-			util.Logger(util.Error, "getSheets.go/GetSheets()/f.Close()", "Error when executing Close()", "Excelファイルのクローズ中にエラーが発生しました")
+		if closeErr := f.Close(); closeErr != nil {
+			if err == nil {
+				err = fmt.Errorf("closing the Excel file / Excelファイル閉じ中: %w", closeErr)
+			} else {
+				err = errors.Join(err, fmt.Errorf("closing the Excel file / Excelファイル閉じ中: %w", closeErr))
+			}
+			sheets = nil
 		}
 	}()
 

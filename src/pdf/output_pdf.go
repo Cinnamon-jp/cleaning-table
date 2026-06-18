@@ -6,6 +6,7 @@ import (
 	"cleaning-table/src/util"
 	"errors"
 	"fmt"
+	"log/slog"
 	"path/filepath"
 	"sort"
 
@@ -49,7 +50,7 @@ func OutputPdf(data []model.ShuffledPostSet) error {
 	floors := sortedFloorKeys(floorMap)
 
 	if len(floors) == 0 {
-		util.Logger(util.Warn, "output_pdf.go/OutputPdf()", "No data to output / データが空のためPDFを生成しません", "データが空のためPDFを生成しません")
+		slog.Warn("no data to output / 出力するデータが存在しません")
 		return nil
 	}
 
@@ -59,8 +60,7 @@ func OutputPdf(data []model.ShuffledPostSet) error {
 
 	// フォント読み込み
 	if err := loadFont(&pdf); err != nil {
-		util.Logger(util.Error, "output_pdf.go/OutputPdf()/loadFont()", "Error when loading font", "フォントの読み込み中にエラーが発生しました")
-		return err
+		return fmt.Errorf("loading font / フォントの読み込み中: %w", err)
 	}
 
 	// 各階のページを生成
@@ -72,16 +72,14 @@ func OutputPdf(data []model.ShuffledPostSet) error {
 		})
 
 		if err := renderFloorPage(&pdf, floor, entries); err != nil {
-			util.Logger(util.Error, "output_pdf.go/OutputPdf()/renderFloorPage()", fmt.Sprintf("Error when rendering page for %dF", floor), fmt.Sprintf("%dFのページ生成中にエラーが発生しました", floor))
-			return err
+			return fmt.Errorf("rendering pages / ページの描画中: %w", err)
 		}
 	}
 
 	// PDF保存
 	outputFileName := util.Input("保存するPDFファイル名を入力してください: ") + ".pdf"
 	if err := pdf.WritePdf(outputFileName); err != nil {
-		util.Logger(util.Error, "output_pdf.go/OutputPdf()/pdf.WritePdf()", "Error when writing PDF file", "PDFファイルの書き込み中にエラーが発生しました")
-		return err
+		return fmt.Errorf("writing PDF file / PDFファイルの書き込み中: %w", err)
 	}
 
 	return nil
@@ -115,21 +113,18 @@ func loadFont(pdf *gopdf.GoPdf) error {
 	// カレントディレクトリ内の.ttfファイルを探索
 	ttfFiles, err := filepath.Glob("*.ttf")
 	if err != nil {
-		util.Logger(util.Error, "output_pdf.go/loadFont()/filepath.Glob()", "Error when searching for TTF files", "TTFファイルの探索中にエラーが発生しました")
-		return err
+		return fmt.Errorf("searching for TTF files / TTFファイルの探索中: %w", err)
 	}
 
 	if len(ttfFiles) == 0 {
-		util.Logger(util.Warn, "output_pdf.go/loadFont()/len(ttfFiles) == 0", "no TTF font files found in current directory", "カレントディレクトリにTTFフォントファイルが見つかりません")
-		return errors.New("no TTF font files found in current directory / カレントディレクトリにTTFフォントファイルが見つかりません")
+		return errors.New("no TTF font files / TTFフォントファイルが存在しない")
 	}
 
 	// フォントファイルの選択
 	var selectedFont string
 	if len(ttfFiles) > 1 {
 		if selectedFont, err = util.Select("使用するフォントファイルを選択してください", ttfFiles); err != nil {
-			util.Logger(util.Error, "output_pdf.go/loadFont()/util.Select()", "Error when selecting font file", "フォントファイルの選択中にエラーが発生しました")
-			return err
+			return fmt.Errorf("selecting font file / フォントファイルの選択中: %w", err)
 		}
 	} else {
 		selectedFont = ttfFiles[0]
@@ -137,8 +132,7 @@ func loadFont(pdf *gopdf.GoPdf) error {
 
 	// フォントの読み込み
 	if err := pdf.AddTTFFont("japanese", selectedFont); err != nil {
-		util.Logger(util.Error, "output_pdf.go/loadFont()/pdf.AddTTFFont()", fmt.Sprintf("Error when loading font: %s", selectedFont), fmt.Sprintf("フォントの読み込みに失敗しました: %s", selectedFont))
-		return err
+		return fmt.Errorf("loading font / フォントの読み込み中: %w", err)
 	}
 
 	return nil
@@ -150,7 +144,7 @@ func renderFloorPage(pdf *gopdf.GoPdf, floor int, entries []model.ShuffledPostSe
 
 	// タイトル描画
 	if err := drawTitle(pdf, floor); err != nil {
-		return err
+		return fmt.Errorf("drawing title / タイトルの描画中: %w", err)
 	}
 
 	// データを部屋番号でインデックス化し、01〜49号室の全部屋リストを構築
@@ -162,13 +156,13 @@ func renderFloorPage(pdf *gopdf.GoPdf, floor int, entries []model.ShuffledPostSe
 	// 左テーブル描画（01〜29号室）
 	leftTableX := marginLeft
 	if err := drawTable(pdf, leftTableX, tableStartY, leftEntries); err != nil {
-		return err
+		return fmt.Errorf("drawing left table / 左テーブルの描画中: %w", err)
 	}
 
 	// 右テーブル描画（30〜49号室）
 	rightTableX := marginLeft + roomNumColWidth + postColWidth + tableGap
 	if err := drawTable(pdf, rightTableX, tableStartY, rightEntries); err != nil {
-		return err
+		return fmt.Errorf("drawing right table / 右テーブルの描画中: %w", err)
 	}
 
 	return nil
@@ -177,7 +171,7 @@ func renderFloorPage(pdf *gopdf.GoPdf, floor int, entries []model.ShuffledPostSe
 // drawTitle はページ上部中央にタイトルを描画する。
 func drawTitle(pdf *gopdf.GoPdf, floor int) error {
 	if err := pdf.SetFont("japanese", "", titleFontSize); err != nil {
-		return err
+		return fmt.Errorf("setting font / フォント設定中: %w", err)
 	}
 
 	title := fmt.Sprintf("%dF清掃割り振り表", floor)
@@ -185,7 +179,7 @@ func drawTitle(pdf *gopdf.GoPdf, floor int) error {
 	// タイトルのテキスト幅を計測して中央揃え
 	titleWidth, err := pdf.MeasureTextWidth(title)
 	if err != nil {
-		return err
+		return fmt.Errorf("measuring text width / テキスト幅の計測中: %w", err)
 	}
 
 	pageWidth := gopdf.PageSizeA4.W
@@ -193,7 +187,7 @@ func drawTitle(pdf *gopdf.GoPdf, floor int) error {
 
 	pdf.SetXY(titleX, marginTop)
 	if err := pdf.Cell(nil, title); err != nil {
-		return err
+		return fmt.Errorf("setting cell / セルの設定中: %w", err)
 	}
 
 	return nil
@@ -241,13 +235,13 @@ func drawTable(pdf *gopdf.GoPdf, startX, startY float64, entries []model.Shuffle
 
 	// ヘッダー行の描画
 	if err := drawHeaderRow(pdf, startX, currentY); err != nil {
-		return err
+		return fmt.Errorf("drawing header row / ヘッダー行の描画中: %w", err)
 	}
 	currentY += cellHeight
 
 	// データ行の描画
 	if err := pdf.SetFont("japanese", "", tableFontSize); err != nil {
-		return err
+		return fmt.Errorf("setting font / フォント設定中: %w", err)
 	}
 
 	for _, entry := range entries {
@@ -255,12 +249,12 @@ func drawTable(pdf *gopdf.GoPdf, startX, startY float64, entries []model.Shuffle
 
 		// 部屋番号セル
 		if err := drawCell(pdf, startX, currentY, roomNumColWidth, cellHeight, roomStr); err != nil {
-			return err
+			return fmt.Errorf("drawing room number cell / 部屋番号セルの描画中: %w", err)
 		}
 
 		// 掃除場所セル
 		if err := drawCell(pdf, startX+roomNumColWidth, currentY, postColWidth, cellHeight, entry.Post); err != nil {
-			return err
+			return fmt.Errorf("drawing post cell / 掃除場所セルの描画中: %w", err)
 		}
 
 		currentY += cellHeight
@@ -273,7 +267,7 @@ func drawTable(pdf *gopdf.GoPdf, startX, startY float64, entries []model.Shuffle
 // グレーの背景色付きでヘッダーテキスト（「部屋番号」「掃除場所」）を描画する。
 func drawHeaderRow(pdf *gopdf.GoPdf, startX, startY float64) error {
 	if err := pdf.SetFont("japanese", "", headerFontSize); err != nil {
-		return err
+		return fmt.Errorf("setting font / フォント設定中: %w", err)
 	}
 
 	// ヘッダー背景色（グレー）を描画
@@ -281,11 +275,11 @@ func drawHeaderRow(pdf *gopdf.GoPdf, startX, startY float64) error {
 
 	// 部屋番号ヘッダーの背景
 	if err := pdf.Rectangle(startX, startY, startX+roomNumColWidth, startY+cellHeight, "F", 0, 0); err != nil {
-		return err
+		return fmt.Errorf("drawing room number header background / 部屋番号ヘッダー背景描画中: %w", err)
 	}
 	// 掃除場所ヘッダーの背景
 	if err := pdf.Rectangle(startX+roomNumColWidth, startY, startX+roomNumColWidth+postColWidth, startY+cellHeight, "F", 0, 0); err != nil {
-		return err
+		return fmt.Errorf("drawing post header background / 掃除場所ヘッダー背景描画中: %w", err)
 	}
 
 	// テキスト色を黒にリセット
@@ -293,12 +287,12 @@ func drawHeaderRow(pdf *gopdf.GoPdf, startX, startY float64) error {
 
 	// 部屋番号ヘッダーテキスト
 	if err := drawCell(pdf, startX, startY, roomNumColWidth, cellHeight, "部屋番号"); err != nil {
-		return err
+		return fmt.Errorf("drawing room number header text / 部屋番号ヘッダーテキスト描画中: %w", err)
 	}
 
 	// 掃除場所ヘッダーテキスト
 	if err := drawCell(pdf, startX+roomNumColWidth, startY, postColWidth, cellHeight, "掃除場所"); err != nil {
-		return err
+		return fmt.Errorf("drawing post header text / 掃除場所ヘッダーテキスト描画中: %w", err)
 	}
 
 	// 塗りつぶし色をリセット（白）
@@ -313,13 +307,13 @@ func drawCell(pdf *gopdf.GoPdf, x, y, width, height float64, text string) error 
 	pdf.SetLineWidth(0.5)
 	pdf.SetStrokeColor(0, 0, 0)
 	if err := pdf.Rectangle(x, y, x+width, y+height, "D", 0, 0); err != nil {
-		return err
+		return fmt.Errorf("drawing rectangle / 矩形描画中: %w", err)
 	}
 
 	// テキストを描画（パディングあり）
 	pdf.SetXY(x+cellPaddingLeft, y+cellPaddingTop)
 	if err := pdf.Cell(nil, text); err != nil {
-		return err
+		return fmt.Errorf("drawing cell text / セルテキスト描画中: %w", err)
 	}
 
 	return nil
