@@ -25,6 +25,7 @@ const (
 const (
 	titleFontSize     = 20.0
 	titleMarginBottom = 25.0
+	messageFontSize   = 14.0
 )
 
 // テーブル
@@ -64,6 +65,25 @@ func OutputPdf(data []model.ShuffledPostSet) error {
 		return fmt.Errorf("loading font / フォントの読み込み中: %w", err)
 	}
 
+	// PDF保存ファイル名の入力
+	inputName, err := util.Input("保存するPDFファイル名を入力してください: ")
+	if err != nil {
+		return fmt.Errorf("inputting file name / ファイル名の入力中: %w", err)
+	}
+	outputFileName := inputName + ".pdf"
+
+	// タイトル左側メッセージの入力
+	leftMsg, err := util.Input("タイトル左側のメッセージを入力してください: ")
+	if err != nil {
+		return fmt.Errorf("inputting left message / 左メッセージの入力中: %w", err)
+	}
+
+	// タイトル右側メッセージの入力
+	rightMsg, err := util.Input("タイトル右側のメッセージを入力してください: ")
+	if err != nil {
+		return fmt.Errorf("inputting right message / 右メッセージの入力中: %w", err)
+	}
+
 	// 各階のページを生成
 	for _, floor := range floors {
 		entries := floorMap[floor]
@@ -72,18 +92,12 @@ func OutputPdf(data []model.ShuffledPostSet) error {
 			return entries[i].RoomNumber < entries[j].RoomNumber
 		})
 
-		if err := renderFloorPage(&pdf, floor, entries); err != nil {
+		if err := renderFloorPage(&pdf, floor, entries, leftMsg, rightMsg); err != nil {
 			return fmt.Errorf("rendering pages / ページの描画中: %w", err)
 		}
 	}
 
 	// PDF保存
-	inputName, err := util.Input("保存するPDFファイル名を入力してください: ")
-	if err != nil {
-		return fmt.Errorf("inputting file name / ファイル名の入力中: %w", err)
-	}
-	outputFileName := inputName + ".pdf"
-
 	if err := pdf.WritePdf(outputFileName); err != nil {
 		return fmt.Errorf("writing PDF file / PDFファイルの書き込み中: %w", err)
 	}
@@ -145,11 +159,12 @@ func loadFont(pdf *gopdf.GoPdf) error {
 }
 
 // renderFloorPage は1階分のページを描画する。
-func renderFloorPage(pdf *gopdf.GoPdf, floor int, entries []model.ShuffledPostSet) error {
+// leftMsg, rightMsg はタイトルの左右に表示するメッセージ。空文字の場合は表示しない。
+func renderFloorPage(pdf *gopdf.GoPdf, floor int, entries []model.ShuffledPostSet, leftMsg, rightMsg string) error {
 	pdf.AddPage()
 
 	// タイトル描画
-	if err := drawTitle(pdf, floor); err != nil {
+	if err := drawTitle(pdf, floor, leftMsg, rightMsg); err != nil {
 		return fmt.Errorf("drawing title / タイトルの描画中: %w", err)
 	}
 
@@ -175,7 +190,8 @@ func renderFloorPage(pdf *gopdf.GoPdf, floor int, entries []model.ShuffledPostSe
 }
 
 // drawTitle はページ上部中央にタイトルを描画する。
-func drawTitle(pdf *gopdf.GoPdf, floor int) error {
+// leftMsg, rightMsg が空文字でない場合、タイトルの左右にメッセージを描画する。
+func drawTitle(pdf *gopdf.GoPdf, floor int, leftMsg, rightMsg string) error {
 	if err := pdf.SetFont("japanese", "", titleFontSize); err != nil {
 		return fmt.Errorf("setting font / フォント設定中: %w", err)
 	}
@@ -194,6 +210,41 @@ func drawTitle(pdf *gopdf.GoPdf, floor int) error {
 	pdf.SetXY(titleX, marginTop)
 	if err := pdf.Cell(nil, title); err != nil {
 		return fmt.Errorf("setting cell / セルの設定中: %w", err)
+	}
+
+	// タイトル左右のメッセージ描画
+	// メッセージはタイトルより小さいフォントサイズで、ベースラインを揃えて配置する
+	messageY := marginTop + (titleFontSize - messageFontSize)
+
+	// 左メッセージの描画
+	if leftMsg != "" {
+		if err := pdf.SetFont("japanese", "", messageFontSize); err != nil {
+			return fmt.Errorf("setting font for left message / 左メッセージのフォント設定中: %w", err)
+		}
+
+		pdf.SetXY(marginLeft, messageY)
+		if err := pdf.Cell(nil, leftMsg); err != nil {
+			return fmt.Errorf("drawing left message / 左メッセージの描画中: %w", err)
+		}
+	}
+
+	// 右メッセージの描画
+	if rightMsg != "" {
+		if err := pdf.SetFont("japanese", "", messageFontSize); err != nil {
+			return fmt.Errorf("setting font for right message / 右メッセージのフォント設定中: %w", err)
+		}
+
+		// テキスト幅を計測して右寄せ
+		rightMsgWidth, err := pdf.MeasureTextWidth(rightMsg)
+		if err != nil {
+			return fmt.Errorf("measuring right message width / 右メッセージ幅の計測中: %w", err)
+		}
+
+		rightMsgX := pageWidth - marginLeft - rightMsgWidth
+		pdf.SetXY(rightMsgX, messageY)
+		if err := pdf.Cell(nil, rightMsg); err != nil {
+			return fmt.Errorf("drawing right message / 右メッセージの描画中: %w", err)
+		}
 	}
 
 	return nil
