@@ -1,17 +1,14 @@
 package util
 
-import (
-	"bufio"
-	"fmt"
-	"os"
-)
+import "github.com/AlecAivazis/survey/v2"
 
 // Input は、プロンプトメッセージ msg を出力し、標準入力から入力された文字列を1行読み込んで返します。
-func Input(msg string) string {
-	fmt.Print(msg)
-	scanner := bufio.NewScanner(os.Stdin)
-	if scanner.Scan() {
-		return scanner.Text()
+// 戻り値として、入力された文字列と発生したエラーを返します。
+func Input(msg string) (string, error) {
+	var result string
+	prompt := &survey.Input{
+		Message: msg,
 	}
-	return ""
+	err := survey.AskOne(prompt, &result)
+	return result, err
 }

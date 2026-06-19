@@ -78,7 +78,12 @@ func OutputPdf(data []model.ShuffledPostSet) error {
 	}
 
 	// PDF保存
-	outputFileName := util.Input("保存するPDFファイル名を入力してください: ") + ".pdf"
+	inputName, err := util.Input("保存するPDFファイル名を入力してください: ")
+	if err != nil {
+		return fmt.Errorf("inputting file name / ファイル名の入力中: %w", err)
+	}
+	outputFileName := inputName + ".pdf"
+
 	if err := pdf.WritePdf(outputFileName); err != nil {
 		return fmt.Errorf("writing PDF file / PDFファイルの書き込み中: %w", err)
 	}
