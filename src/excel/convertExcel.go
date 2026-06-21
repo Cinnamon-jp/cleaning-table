@@ -4,6 +4,7 @@ package excel
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -12,12 +13,6 @@ import (
 
 // ConvertExcel はExcelから取り出したデータを処理しやすいように変換する
 func ConvertExcel(excelData [][]string) (convertedData []model.PostSet, err error) {
-	// Excelデータの文法をチェックする
-	var isOK bool
-	if isOK, err = checkExcel(excelData); !isOK || err != nil {
-		return nil, fmt.Errorf("checking the Excle syntax / Excelの文法チェック中: %w", err)
-	}
-
 	// コメント列を削除
 	noCommentExcelData := removeComment(excelData)
 
@@ -59,11 +54,34 @@ func ConvertExcel(excelData [][]string) (convertedData []model.PostSet, err erro
 		})
 	}
 
+	if notDup, err := checkDuplication(postSets); !notDup || err != nil {
+		return nil, fmt.Errorf("checking duplication / 重複のチェック中: %w", err)
+	}
+
 	return postSets, nil
 }
 
-// checkExcel はExcelの文法チェックを行う 未完成
-func checkExcel(_ [][]string) (isOK bool, err error) {
+// checkDuplication は部屋番号のチェックを行う
+func checkDuplication(postSets []model.PostSet) (isOK bool, err error) {
+	const roomsEachFloor int = 49
+
+	roomNumbers := make([]int, 0, len(postSets)*roomsEachFloor)
+	for _, postset := range postSets {
+		roomNumbers = append(roomNumbers, postset.RoomNumbers...)
+	}
+
+	slices.Sort(roomNumbers)
+
+	var duplication []int
+	for i := 1; i < len(roomNumbers); i++ {
+		if roomNumbers[i-1] == roomNumbers[i] {
+			duplication = append(duplication, roomNumbers[i])
+		}
+	}
+	if len(duplication) > 0 {
+		return false, fmt.Errorf("duplicate room numbers / 部屋番号の重複: %v", duplication)
+	}
+
 	return true, nil
 }
 
