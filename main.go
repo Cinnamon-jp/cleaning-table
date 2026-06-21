@@ -6,11 +6,14 @@ import (
 	"log/slog"
 
 	"cleaning-table/src/excel"
+	"cleaning-table/src/history"
 	"cleaning-table/src/model"
 	"cleaning-table/src/pdf"
 	"cleaning-table/src/shuffle"
 	"cleaning-table/src/util"
 )
+
+const historyFileName = "cleaning_history.json"
 
 func main() {
 	if err := run(); err != nil {
@@ -64,10 +67,29 @@ func run() error {
 		return fmt.Errorf("converting the Excel data / Excelデータの変換中: %w", err)
 	}
 
-	// 役職をシャッフル
+	// 履歴ファイルの読み込み
+	hist, err := history.LoadHistory(historyFileName)
+	if err != nil {
+		return fmt.Errorf("loading history / 履歴の読み込み中: %w", err)
+	}
+
+	// フィンガープリントを生成し、Excel構成の変更を検知
+	fingerprint := history.GenerateFingerprint(convertedData)
+	history.CheckAndResetHistory(hist, fingerprint)
+
+	// 履歴からカウントマップを構築
+	countMap := history.GetCountMap(hist)
+
+	// 役職を重み付きシャッフル
 	var shuffledPostSet []model.ShuffledPostSet
-	if shuffledPostSet, err = shuffle.SimpleShuffle(convertedData); err != nil {
+	if shuffledPostSet, err = shuffle.EvenShuffle(convertedData, countMap); err != nil {
 		return fmt.Errorf("shuffling the post sets / 役職セットのシャッフル中: %w", err)
+	}
+
+	// 履歴の累計カウントを更新して保存
+	history.UpdateCounts(hist, shuffledPostSet)
+	if err = history.SaveHistory(historyFileName, hist); err != nil {
+		return fmt.Errorf("saving history / 履歴の保存中: %w", err)
 	}
 
 	// PDF出力
