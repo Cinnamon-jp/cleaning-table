@@ -104,6 +104,123 @@ func TestShuffleTask_ErrorMismatch(t *testing.T) {
 	}
 }
 
+func TestShuffleTask_EdgeCases(t *testing.T) {
+	tests := []struct {
+		name        string
+		rules       []assignRule
+		history     assignHistory
+		wantErr     bool
+		wantResults int
+	}{
+		{
+			name:        "rules が nil",
+			rules:       nil,
+			history:     nil,
+			wantErr:     false,
+			wantResults: 0,
+		},
+		{
+			name:        "rules が空スライス",
+			rules:       []assignRule{},
+			history:     nil,
+			wantErr:     false,
+			wantResults: 0,
+		},
+		{
+			name: "rule.rooms が nil",
+			rules: []assignRule{
+				{rooms: nil, tasks: []string{"A"}},
+			},
+			history: nil,
+			wantErr: true,
+		},
+		{
+			name: "rule.tasks が nil",
+			rules: []assignRule{
+				{rooms: mapset.NewSet(1), tasks: nil},
+			},
+			history: nil,
+			wantErr: true,
+		},
+		{
+			name: "部屋とタスクが両方空（要素数0）",
+			rules: []assignRule{
+				{rooms: mapset.NewSet[int](), tasks: []string{}},
+			},
+			history: nil,
+			wantErr: true,
+		},
+		{
+			name: "history が nil",
+			rules: []assignRule{
+				{rooms: mapset.NewSet(1), tasks: []string{"A"}},
+			},
+			history:     nil,
+			wantErr:     false,
+			wantResults: 1,
+		},
+		{
+			name: "history[room] が nil",
+			rules: []assignRule{
+				{rooms: mapset.NewSet(1), tasks: []string{"A"}},
+			},
+			history:     assignHistory{1: nil},
+			wantErr:     false,
+			wantResults: 1,
+		},
+		{
+			name: "history に負の値が含まれる",
+			rules: []assignRule{
+				{rooms: mapset.NewSet(1), tasks: []string{"A"}},
+			},
+			history:     assignHistory{1: {"A": -10}},
+			wantErr:     false,
+			wantResults: 1,
+		},
+		{
+			name: "history に非常に大きな値が含まれる",
+			rules: []assignRule{
+				{rooms: mapset.NewSet(1), tasks: []string{"A"}},
+			},
+			history:     assignHistory{1: {"A": 1000000}},
+			wantErr:     false,
+			wantResults: 1,
+		},
+		{
+			name: "タスク名が空文字列や特殊文字",
+			rules: []assignRule{
+				{rooms: mapset.NewSet(1, 2), tasks: []string{"", "🧹✨\n\t"}},
+			},
+			history:     nil,
+			wantErr:     false,
+			wantResults: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Fatalf("unexpected panic: %v", r)
+				}
+			}()
+
+			results, newH, err := shuffleTask(tt.rules, tt.history)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("shuffleTask() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !tt.wantErr {
+				if len(results) != tt.wantResults {
+					t.Errorf("expected %d results, got %d", tt.wantResults, len(results))
+				}
+				if newH == nil {
+					t.Error("expected non-nil newHistory")
+				}
+			}
+		})
+	}
+}
+
 func TestShuffleTask_FairnessSimulation(t *testing.T) {
 	// 4部屋・4タスクで 40 回割り当てを繰り返す
 	rooms := []int{1, 2, 3, 4}

@@ -82,6 +82,34 @@ func TestCheckDuplicatesAndSparse(t *testing.T) {
 			rules:   []assignRule{},
 			wantErr: false,
 		},
+		{
+			name:    "正常: rules が nil",
+			rules:   nil,
+			wantErr: false,
+		},
+		{
+			name: "正常: すべてのルールの rooms が nil",
+			rules: []assignRule{
+				{rooms: nil, tasks: []string{"A"}},
+				{rooms: nil, tasks: []string{"B"}},
+			},
+			wantErr: false,
+		},
+		{
+			name: "正常: rooms が空集合（要素数0）のみ",
+			rules: []assignRule{
+				{rooms: mapset.NewSet[int](), tasks: []string{}},
+			},
+			wantErr: false,
+		},
+		{
+			name: "エラー: 一部が nil で残りがカバーされていない",
+			rules: []assignRule{
+				{rooms: nil, tasks: []string{"A"}},
+				{rooms: mapset.NewSet(1, 2), tasks: []string{"A", "B"}},
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
