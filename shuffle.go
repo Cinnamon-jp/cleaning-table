@@ -9,7 +9,7 @@ import (
 )
 
 // shuffleTask は過去の担当履歴 (history) をもとに、
-// 各部屋にタスクができるだけ均等に分配されるように割り当てを行います。
+// 各部屋にタスクができるだけ均等に分配されるように割り当てを行う
 func shuffleTask(
 	rules []assignRule,
 	history assignHistory,
@@ -56,7 +56,7 @@ func shuffleTask(
 				if taskCounts, ok := newHistory[room]; ok {
 					count = taskCounts[task]
 				}
-				cost[rIdx][tIdx] = count * count // コストを2乗で定義する。
+				cost[rIdx][tIdx] = count * count // コストを2乗で定義する
 			}
 		}
 
@@ -93,7 +93,7 @@ func copyHistory(src assignHistory) assignHistory {
 }
 
 // minWeightBipartiteMatching はハンガリアン法を用いて、
-// N x N コスト行列に対する最小コストのマッチングを求める。
+// N x N コスト行列に対する最小コストのマッチングを求める
 func minWeightBipartiteMatching(cost [][]int) []int {
 	n := len(cost)
 	if n == 0 {
