@@ -6,7 +6,7 @@ import (
 
 type assignRule struct {
 	rooms mapset.Set[int]
-	tasks mapset.Set[string]
+	tasks []string
 }
 
 type assignResult struct {

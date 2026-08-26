@@ -17,15 +17,15 @@ func TestCheckDuplicatesAndSparse(t *testing.T) {
 			rules: []assignRule{
 				{
 					rooms: mapset.NewSet(1, 2, 3), // maxIdx (部屋数 3)
-					tasks: mapset.NewSet("taskA", "taskB", "taskC"),
+					tasks: []string{"taskA", "taskB", "taskC"},
 				},
 				{
 					rooms: mapset.NewSet(1, 2),
-					tasks: mapset.NewSet("taskA", "taskB"),
+					tasks: []string{"taskA", "taskB"},
 				},
 				{
 					rooms: mapset.NewSet(3),
-					tasks: mapset.NewSet("taskC"),
+					tasks: []string{"taskC"},
 				},
 			},
 			wantErr: false,
@@ -35,15 +35,15 @@ func TestCheckDuplicatesAndSparse(t *testing.T) {
 			rules: []assignRule{
 				{
 					rooms: mapset.NewSet(1, 2),
-					tasks: mapset.NewSet("taskA", "taskB"),
+					tasks: []string{"taskA", "taskB"},
 				},
 				{
 					rooms: mapset.NewSet(1, 2, 3, 4), // maxIdx (部屋数 4)
-					tasks: mapset.NewSet("taskA", "taskB", "taskC", "taskD"),
+					tasks: []string{"taskA", "taskB", "taskC", "taskD"},
 				},
 				{
 					rooms: mapset.NewSet(2, 3, 4),
-					tasks: mapset.NewSet("taskB", "taskC", "taskD"),
+					tasks: []string{"taskB", "taskC", "taskD"},
 				},
 			},
 			wantErr: false,
@@ -53,15 +53,15 @@ func TestCheckDuplicatesAndSparse(t *testing.T) {
 			rules: []assignRule{
 				{
 					rooms: mapset.NewSet(1, 2, 3, 4), // maxIdx (部屋数 4)
-					tasks: mapset.NewSet("taskA", "taskB", "taskC", "taskD"),
+					tasks: []string{"taskA", "taskB", "taskC", "taskD"},
 				},
 				{
 					rooms: mapset.NewSet(1, 2),
-					tasks: mapset.NewSet("taskA", "taskB"),
+					tasks: []string{"taskA", "taskB"},
 				},
 				{
 					rooms: mapset.NewSet(3),
-					tasks: mapset.NewSet("taskC"),
+					tasks: []string{"taskC"},
 				},
 				// 部屋4がカバーされていない
 			},
@@ -72,7 +72,7 @@ func TestCheckDuplicatesAndSparse(t *testing.T) {
 			rules: []assignRule{
 				{
 					rooms: mapset.NewSet(1, 2, 3),
-					tasks: mapset.NewSet("taskA", "taskB", "taskC"),
+					tasks: []string{"taskA", "taskB", "taskC"},
 				},
 			},
 			wantErr: true,

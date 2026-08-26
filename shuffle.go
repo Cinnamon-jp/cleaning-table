@@ -5,6 +5,7 @@ import (
 	"maps"
 	"math"
 	"math/rand/v2"
+	"slices"
 )
 
 // shuffleTask は過去の担当履歴 (history) をもとに、
@@ -22,21 +23,21 @@ func shuffleTask(
 
 	for i, rule := range rules {
 		if rule.rooms == nil || rule.tasks == nil {
-			continue // must return error
+			return nil, nil, fmt.Errorf("rooms and tasks must not be nil (index %d)", i)
 		}
 
 		nRooms := rule.rooms.Cardinality()
-		nTasks := rule.tasks.Cardinality()
+		nTasks := len(rule.tasks)
 		if nRooms != nTasks {
 			return nil, nil, fmt.Errorf("number of rooms and tasks must match [%d != %d] (index %d)", nRooms, nTasks, i)
 		}
 
 		if nRooms == 0 {
-			continue // must return error
+			return nil, nil, fmt.Errorf("rooms and tasks must not be empty (index %d)", i)
 		}
 
 		rooms := rule.rooms.ToSlice()
-		tasks := rule.tasks.ToSlice()
+		tasks := slices.Clone(rule.tasks)
 
 		// 同一回数の候補間で偏りが出ないよう事前にランダムシャッフル
 		rand.Shuffle(len(rooms), func(i, j int) {

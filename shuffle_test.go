@@ -11,7 +11,7 @@ func TestShuffleTask_Basic(t *testing.T) {
 	rules := []assignRule{
 		{
 			rooms: mapset.NewSet(101, 102, 103),
-			tasks: mapset.NewSet("ゴミ出し", "掃除機", "風呂掃除"),
+			tasks: []string{"ゴミ出し", "掃除機", "風呂掃除"},
 		},
 	}
 
@@ -44,11 +44,57 @@ func TestShuffleTask_Basic(t *testing.T) {
 	}
 }
 
+func TestShuffleTask_DuplicateTasks(t *testing.T) {
+	// 同じタスク（例: ゴミ分別が2人分）が含まれるケース
+	rules := []assignRule{
+		{
+			rooms: mapset.NewSet(101, 102, 103),
+			tasks: []string{"ゴミ分別", "シャワー室", "ゴミ分別"},
+		},
+	}
+
+	history := make(assignHistory)
+	results, newHistory, err := shuffleTask(rules, history)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(results) != 3 {
+		t.Fatalf("expected 3 results, got %d", len(results))
+	}
+
+	taskCounts := make(map[string]int)
+	roomAssigned := make(map[int]bool)
+	for _, res := range results {
+		if roomAssigned[res.room] {
+			t.Errorf("duplicate room assigned: %d", res.room)
+		}
+		roomAssigned[res.room] = true
+		taskCounts[res.task]++
+	}
+
+	if taskCounts["ゴミ分別"] != 2 {
+		t.Errorf("expected 2 'ゴミ分別', got %d", taskCounts["ゴミ分別"])
+	}
+	if taskCounts["シャワー室"] != 1 {
+		t.Errorf("expected 1 'シャワー室', got %d", taskCounts["シャワー室"])
+	}
+
+	// 履歴の更新も確認
+	gomiTotal := 0
+	for room := range roomAssigned {
+		gomiTotal += newHistory[room]["ゴミ分別"]
+	}
+	if gomiTotal != 2 {
+		t.Errorf("expected total 2 in history for 'ゴミ分別', got %d", gomiTotal)
+	}
+}
+
 func TestShuffleTask_ErrorMismatch(t *testing.T) {
 	rules := []assignRule{
 		{
 			rooms: mapset.NewSet(101, 102),
-			tasks: mapset.NewSet("ゴミ出し", "掃除機", "風呂掃除"),
+			tasks: []string{"ゴミ出し", "掃除機", "風呂掃除"},
 		},
 	}
 
@@ -66,7 +112,7 @@ func TestShuffleTask_FairnessSimulation(t *testing.T) {
 	rules := []assignRule{
 		{
 			rooms: mapset.NewSet(rooms...),
-			tasks: mapset.NewSet(tasks...),
+			tasks: tasks,
 		},
 	}
 
@@ -101,7 +147,7 @@ func TestShuffleTask_PrioritizeInfrequentTask(t *testing.T) {
 	rules := []assignRule{
 		{
 			rooms: mapset.NewSet(1, 2),
-			tasks: mapset.NewSet("TaskA", "TaskB"),
+			tasks: []string{"TaskA", "TaskB"},
 		},
 	}
 
@@ -129,7 +175,7 @@ func TestShuffleTask_Immutability(t *testing.T) {
 	rules := []assignRule{
 		{
 			rooms: mapset.NewSet(1),
-			tasks: mapset.NewSet("TaskA"),
+			tasks: []string{"TaskA"},
 		},
 	}
 
@@ -164,7 +210,7 @@ func TestVerifyFairness(t *testing.T) {
 		rules := []assignRule{
 			{
 				rooms: mapset.NewSet(roomSlice...),
-				tasks: mapset.NewSet(taskSlice...),
+				tasks: taskSlice,
 			},
 		}
 
@@ -193,7 +239,7 @@ func TestVerifyFairness(t *testing.T) {
 		rules := []assignRule{
 			{
 				rooms: mapset.NewSet(roomSlice...),
-				tasks: mapset.NewSet(taskSlice...),
+				tasks: taskSlice,
 			},
 		}
 
@@ -232,7 +278,7 @@ func TestVerifyFairness(t *testing.T) {
 		rules := []assignRule{
 			{
 				rooms: mapset.NewSet(roomSlice...),
-				tasks: mapset.NewSet(taskSlice...),
+				tasks: taskSlice,
 			},
 		}
 
@@ -271,7 +317,7 @@ func BenchmarkShuffleTask(b *testing.B) {
 		}
 		rules[i] = assignRule{
 			rooms: mapset.NewSet(roomSlice...),
-			tasks: mapset.NewSet(taskSlice...),
+			tasks: taskSlice,
 		}
 	}
 
