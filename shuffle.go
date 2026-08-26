@@ -82,7 +82,7 @@ func shuffleTask(
 	return result, newHistory, nil
 }
 
-// copyHistory は assignHistory のディープコピーを作成します。
+// copyHistory は assignHistory のディープコピーを作成する
 func copyHistory(src assignHistory) assignHistory {
 	dst := make(assignHistory)
 	for room, tasks := range src {
@@ -92,9 +92,8 @@ func copyHistory(src assignHistory) assignHistory {
 	return dst
 }
 
-// minWeightBipartiteMatching はハンガリアン法（Kuhn-Munkres法）を用いて、
-// N x N コスト行列に対する最小コストの完全マッチングを O(N^3) で求めます。
-// matching[i] = 行 i に割り当てられた列番号 j を返します。
+// minWeightBipartiteMatching はハンガリアン法を用いて、
+// N x N コスト行列に対する最小コストのマッチングを求める。
 func minWeightBipartiteMatching(cost [][]int) []int {
 	n := len(cost)
 	if n == 0 {
