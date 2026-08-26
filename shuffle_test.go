@@ -377,8 +377,7 @@ func TestVerifyFairness(t *testing.T) {
 
 		// 20回追加後、各部屋で過去0回だった3タスクはおよそ6〜7回行われ、10回だったタスクは0回（または最小限）追加される
 		for _, room := range roomSlice {
-			switch room {
-			case 1:
+			if room == 1 {
 				if history[1]["Task_A"] > 11 {
 					t.Errorf("Room 1 Task_A was already 10, should not be frequently assigned, got %d", history[1]["Task_A"])
 				}

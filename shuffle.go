@@ -40,9 +40,11 @@ func shuffleTask(
 		tasks := slices.Clone(rule.tasks)
 
 		// 同一回数の候補間で偏りが出ないよう事前にランダムシャッフル
+		//nolint:gosec // G404: 掃除当番の順序シャッフルであり暗号用途ではないため math/rand/v2 を使用
 		rand.Shuffle(len(rooms), func(i, j int) {
 			rooms[i], rooms[j] = rooms[j], rooms[i]
 		})
+		//nolint:gosec // G404: 掃除当番の順序シャッフルであり暗号用途ではないため math/rand/v2 を使用
 		rand.Shuffle(len(tasks), func(i, j int) {
 			tasks[i], tasks[j] = tasks[j], tasks[i]
 		})

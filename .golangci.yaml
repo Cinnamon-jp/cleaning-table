@@ -32,7 +32,8 @@ formatters:
     - goimports
   settings:
     gofumpt:
-      extra-rules: true
+      extra:
+        group-params: true
       module-path: "cleaning-table"
     goimports:
       local-prefixes: ["cleaning-table"]

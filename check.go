@@ -1,3 +1,4 @@
+// Package main は掃除当番の割り当てと検証を行うメインパッケージです。
 package main
 
 import (
