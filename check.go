@@ -28,7 +28,7 @@ func checkDuplicatesAndSparse(rules []assignRule) error {
 
 	// 全部屋が入った要素だけ抜いたインデックス
 	targetIdx := make([]int, 0, len(rules)-1)
-	for i := 0; i < len(rules); i++ {
+	for i := range rules {
 		if i == maxIdx {
 			continue
 		}
@@ -50,4 +50,3 @@ func checkDuplicatesAndSparse(rules []assignRule) error {
 
 	return nil
 }
-

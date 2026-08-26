@@ -22,7 +22,7 @@ func shuffleTask(
 
 	for i, rule := range rules {
 		if rule.rooms == nil || rule.tasks == nil {
-			continue
+			continue // must return error
 		}
 
 		nRooms := rule.rooms.Cardinality()
@@ -32,24 +32,21 @@ func shuffleTask(
 		}
 
 		if nRooms == 0 {
-			continue
+			continue // must return error
 		}
 
 		rooms := rule.rooms.ToSlice()
 		tasks := rule.tasks.ToSlice()
 
 		// 同一回数の候補間で偏りが出ないよう事前にランダムシャッフル
-		//nolint:gosec // 掃除当番の割当シャッフル用途のため math/rand/v2 で十分
 		rand.Shuffle(len(rooms), func(i, j int) {
 			rooms[i], rooms[j] = rooms[j], rooms[i]
 		})
-		//nolint:gosec // 掃除当番の割当シャッフル用途のため math/rand/v2 で十分
 		rand.Shuffle(len(tasks), func(i, j int) {
 			tasks[i], tasks[j] = tasks[j], tasks[i]
 		})
 
 		// コスト行列を構築
-		// コストは過去回数の2乗とし、極端な偏り（同じ人に同じタスクが集中すること）を強く抑制
 		cost := make([][]int, nRooms)
 		for rIdx, room := range rooms {
 			cost[rIdx] = make([]int, nTasks)
@@ -58,7 +55,7 @@ func shuffleTask(
 				if taskCounts, ok := newHistory[room]; ok {
 					count = taskCounts[task]
 				}
-				cost[rIdx][tIdx] = count * count
+				cost[rIdx][tIdx] = count * count // コストを2乗で定義する。
 			}
 		}
 
