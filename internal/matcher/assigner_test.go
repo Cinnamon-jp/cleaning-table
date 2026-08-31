@@ -1,22 +1,25 @@
-package main
+package matcher_test
 
 import (
 	"fmt"
 	"testing"
 
 	mapset "github.com/deckarep/golang-set/v2"
+
+	"cleaning-table/internal/domain"
+	"cleaning-table/internal/matcher"
 )
 
 func TestShuffleTask_Basic(t *testing.T) {
-	rules := []assignRule{
+	rules := []domain.AssignRule{
 		{
-			rooms: mapset.NewSet(101, 102, 103),
-			tasks: []string{"ゴミ出し", "掃除機", "風呂掃除"},
+			Rooms: mapset.NewSet(101, 102, 103),
+			Tasks: []string{"ゴミ出し", "掃除機", "風呂掃除"},
 		},
 	}
 
-	history := make(assignHistory)
-	results, newHistory, err := shuffleTask(rules, history)
+	history := make(domain.AssignHistory)
+	results, newHistory, err := matcher.ShuffleTask(rules, history)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -29,32 +32,32 @@ func TestShuffleTask_Basic(t *testing.T) {
 	assignedRooms := make(map[int]bool)
 	assignedTasks := make(map[string]bool)
 	for _, res := range results {
-		if assignedRooms[res.room] {
-			t.Errorf("duplicate room assigned: %d", res.room)
+		if assignedRooms[res.Room] {
+			t.Errorf("duplicate room assigned: %d", res.Room)
 		}
-		if assignedTasks[res.task] {
-			t.Errorf("duplicate task assigned: %s", res.task)
+		if assignedTasks[res.Task] {
+			t.Errorf("duplicate task assigned: %s", res.Task)
 		}
-		assignedRooms[res.room] = true
-		assignedTasks[res.task] = true
+		assignedRooms[res.Room] = true
+		assignedTasks[res.Task] = true
 
-		if newHistory[res.room][res.task] != 1 {
-			t.Errorf("expected count 1 for room %d and task %s, got %d", res.room, res.task, newHistory[res.room][res.task])
+		if newHistory[res.Room][res.Task] != 1 {
+			t.Errorf("expected count 1 for room %d and task %s, got %d", res.Room, res.Task, newHistory[res.Room][res.Task])
 		}
 	}
 }
 
 func TestShuffleTask_DuplicateTasks(t *testing.T) {
 	// 同じタスク（例: ゴミ分別が2人分）が含まれるケース
-	rules := []assignRule{
+	rules := []domain.AssignRule{
 		{
-			rooms: mapset.NewSet(101, 102, 103),
-			tasks: []string{"ゴミ分別", "シャワー室", "ゴミ分別"},
+			Rooms: mapset.NewSet(101, 102, 103),
+			Tasks: []string{"ゴミ分別", "シャワー室", "ゴミ分別"},
 		},
 	}
 
-	history := make(assignHistory)
-	results, newHistory, err := shuffleTask(rules, history)
+	history := make(domain.AssignHistory)
+	results, newHistory, err := matcher.ShuffleTask(rules, history)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -66,11 +69,11 @@ func TestShuffleTask_DuplicateTasks(t *testing.T) {
 	taskCounts := make(map[string]int)
 	roomAssigned := make(map[int]bool)
 	for _, res := range results {
-		if roomAssigned[res.room] {
-			t.Errorf("duplicate room assigned: %d", res.room)
+		if roomAssigned[res.Room] {
+			t.Errorf("duplicate room assigned: %d", res.Room)
 		}
-		roomAssigned[res.room] = true
-		taskCounts[res.task]++
+		roomAssigned[res.Room] = true
+		taskCounts[res.Task]++
 	}
 
 	if taskCounts["ゴミ分別"] != 2 {
@@ -91,14 +94,14 @@ func TestShuffleTask_DuplicateTasks(t *testing.T) {
 }
 
 func TestShuffleTask_ErrorMismatch(t *testing.T) {
-	rules := []assignRule{
+	rules := []domain.AssignRule{
 		{
-			rooms: mapset.NewSet(101, 102),
-			tasks: []string{"ゴミ出し", "掃除機", "風呂掃除"},
+			Rooms: mapset.NewSet(101, 102),
+			Tasks: []string{"ゴミ出し", "掃除機", "風呂掃除"},
 		},
 	}
 
-	_, _, err := shuffleTask(rules, nil)
+	_, _, err := matcher.ShuffleTask(rules, nil)
 	if err == nil {
 		t.Fatal("expected error for mismatched rooms and tasks, got nil")
 	}
@@ -107,8 +110,8 @@ func TestShuffleTask_ErrorMismatch(t *testing.T) {
 func TestShuffleTask_EdgeCases(t *testing.T) {
 	tests := []struct {
 		name        string
-		rules       []assignRule
-		history     assignHistory
+		rules       []domain.AssignRule
+		history     domain.AssignHistory
 		wantErr     bool
 		wantResults int
 	}{
@@ -121,39 +124,39 @@ func TestShuffleTask_EdgeCases(t *testing.T) {
 		},
 		{
 			name:        "rules が空スライス",
-			rules:       []assignRule{},
+			rules:       []domain.AssignRule{},
 			history:     nil,
 			wantErr:     false,
 			wantResults: 0,
 		},
 		{
-			name: "rule.rooms が nil",
-			rules: []assignRule{
-				{rooms: nil, tasks: []string{"A"}},
+			name: "rule.Rooms が nil",
+			rules: []domain.AssignRule{
+				{Rooms: nil, Tasks: []string{"A"}},
 			},
 			history: nil,
 			wantErr: true,
 		},
 		{
-			name: "rule.tasks が nil",
-			rules: []assignRule{
-				{rooms: mapset.NewSet(1), tasks: nil},
+			name: "rule.Tasks が nil",
+			rules: []domain.AssignRule{
+				{Rooms: mapset.NewSet(1), Tasks: nil},
 			},
 			history: nil,
 			wantErr: true,
 		},
 		{
 			name: "部屋とタスクが両方空（要素数0）",
-			rules: []assignRule{
-				{rooms: mapset.NewSet[int](), tasks: []string{}},
+			rules: []domain.AssignRule{
+				{Rooms: mapset.NewSet[int](), Tasks: []string{}},
 			},
 			history: nil,
 			wantErr: true,
 		},
 		{
 			name: "history が nil",
-			rules: []assignRule{
-				{rooms: mapset.NewSet(1), tasks: []string{"A"}},
+			rules: []domain.AssignRule{
+				{Rooms: mapset.NewSet(1), Tasks: []string{"A"}},
 			},
 			history:     nil,
 			wantErr:     false,
@@ -161,35 +164,35 @@ func TestShuffleTask_EdgeCases(t *testing.T) {
 		},
 		{
 			name: "history[room] が nil",
-			rules: []assignRule{
-				{rooms: mapset.NewSet(1), tasks: []string{"A"}},
+			rules: []domain.AssignRule{
+				{Rooms: mapset.NewSet(1), Tasks: []string{"A"}},
 			},
-			history:     assignHistory{1: nil},
+			history:     domain.AssignHistory{1: nil},
 			wantErr:     false,
 			wantResults: 1,
 		},
 		{
 			name: "history に負の値が含まれる",
-			rules: []assignRule{
-				{rooms: mapset.NewSet(1), tasks: []string{"A"}},
+			rules: []domain.AssignRule{
+				{Rooms: mapset.NewSet(1), Tasks: []string{"A"}},
 			},
-			history:     assignHistory{1: {"A": -10}},
+			history:     domain.AssignHistory{1: {"A": -10}},
 			wantErr:     false,
 			wantResults: 1,
 		},
 		{
 			name: "history に非常に大きな値が含まれる",
-			rules: []assignRule{
-				{rooms: mapset.NewSet(1), tasks: []string{"A"}},
+			rules: []domain.AssignRule{
+				{Rooms: mapset.NewSet(1), Tasks: []string{"A"}},
 			},
-			history:     assignHistory{1: {"A": 1000000}},
+			history:     domain.AssignHistory{1: {"A": 1000000}},
 			wantErr:     false,
 			wantResults: 1,
 		},
 		{
 			name: "タスク名が空文字列や特殊文字",
-			rules: []assignRule{
-				{rooms: mapset.NewSet(1, 2), tasks: []string{"", "🧹✨\n\t"}},
+			rules: []domain.AssignRule{
+				{Rooms: mapset.NewSet(1, 2), Tasks: []string{"", "🧹✨\n\t"}},
 			},
 			history:     nil,
 			wantErr:     false,
@@ -205,9 +208,9 @@ func TestShuffleTask_EdgeCases(t *testing.T) {
 				}
 			}()
 
-			results, newH, err := shuffleTask(tt.rules, tt.history)
+			results, newH, err := matcher.ShuffleTask(tt.rules, tt.history)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("shuffleTask() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("ShuffleTask() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if !tt.wantErr {
 				if len(results) != tt.wantResults {
@@ -226,18 +229,18 @@ func TestShuffleTask_FairnessSimulation(t *testing.T) {
 	rooms := []int{1, 2, 3, 4}
 	tasks := []string{"TaskA", "TaskB", "TaskC", "TaskD"}
 
-	rules := []assignRule{
+	rules := []domain.AssignRule{
 		{
-			rooms: mapset.NewSet(rooms...),
-			tasks: tasks,
+			Rooms: mapset.NewSet(rooms...),
+			Tasks: tasks,
 		},
 	}
 
-	history := make(assignHistory)
+	history := make(domain.AssignHistory)
 	const rounds = 40
 
 	for range rounds {
-		results, newHistory, err := shuffleTask(rules, history)
+		results, newHistory, err := matcher.ShuffleTask(rules, history)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -261,46 +264,46 @@ func TestShuffleTask_FairnessSimulation(t *testing.T) {
 func TestShuffleTask_PrioritizeInfrequentTask(t *testing.T) {
 	// 部屋1はすでに TaskA を 10 回、TaskB を 0 回行っている
 	// 部屋2はすでに TaskA を 0 回、TaskB を 10 回行っている
-	rules := []assignRule{
+	rules := []domain.AssignRule{
 		{
-			rooms: mapset.NewSet(1, 2),
-			tasks: []string{"TaskA", "TaskB"},
+			Rooms: mapset.NewSet(1, 2),
+			Tasks: []string{"TaskA", "TaskB"},
 		},
 	}
 
-	history := assignHistory{
+	history := domain.AssignHistory{
 		1: {"TaskA": 10, "TaskB": 0},
 		2: {"TaskA": 0, "TaskB": 10},
 	}
 
-	results, _, err := shuffleTask(rules, history)
+	results, _, err := matcher.ShuffleTask(rules, history)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
 	for _, res := range results {
-		if res.room == 1 && res.task != "TaskB" {
-			t.Errorf("room 1 should be assigned TaskB, got %s", res.task)
+		if res.Room == 1 && res.Task != "TaskB" {
+			t.Errorf("room 1 should be assigned TaskB, got %s", res.Task)
 		}
-		if res.room == 2 && res.task != "TaskA" {
-			t.Errorf("room 2 should be assigned TaskA, got %s", res.task)
+		if res.Room == 2 && res.Task != "TaskA" {
+			t.Errorf("room 2 should be assigned TaskA, got %s", res.Task)
 		}
 	}
 }
 
 func TestShuffleTask_Immutability(t *testing.T) {
-	rules := []assignRule{
+	rules := []domain.AssignRule{
 		{
-			rooms: mapset.NewSet(1),
-			tasks: []string{"TaskA"},
+			Rooms: mapset.NewSet(1),
+			Tasks: []string{"TaskA"},
 		},
 	}
 
-	origHistory := assignHistory{
+	origHistory := domain.AssignHistory{
 		1: {"TaskA": 1},
 	}
 
-	_, newHistory, err := shuffleTask(rules, origHistory)
+	_, newHistory, err := matcher.ShuffleTask(rules, origHistory)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -324,16 +327,16 @@ func TestVerifyFairness(t *testing.T) {
 			taskSlice[i] = fmt.Sprintf("Task_%c", 'A'+i)
 		}
 
-		rules := []assignRule{
+		rules := []domain.AssignRule{
 			{
-				rooms: mapset.NewSet(roomSlice...),
-				tasks: taskSlice,
+				Rooms: mapset.NewSet(roomSlice...),
+				Tasks: taskSlice,
 			},
 		}
 
-		history := make(assignHistory)
+		history := make(domain.AssignHistory)
 		for range rounds {
-			_, newH, err := shuffleTask(rules, history)
+			_, newH, err := matcher.ShuffleTask(rules, history)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -353,14 +356,14 @@ func TestVerifyFairness(t *testing.T) {
 	t.Run("初期偏りからの補正シミュレーション (4部屋×4タスク, 偏り10回から20回追加)", func(t *testing.T) {
 		roomSlice := []int{1, 2, 3, 4}
 		taskSlice := []string{"Task_A", "Task_B", "Task_C", "Task_D"}
-		rules := []assignRule{
+		rules := []domain.AssignRule{
 			{
-				rooms: mapset.NewSet(roomSlice...),
-				tasks: taskSlice,
+				Rooms: mapset.NewSet(roomSlice...),
+				Tasks: taskSlice,
 			},
 		}
 
-		history := assignHistory{
+		history := domain.AssignHistory{
 			1: {"Task_A": 10, "Task_B": 0, "Task_C": 0, "Task_D": 0},
 			2: {"Task_A": 0, "Task_B": 10, "Task_C": 0, "Task_D": 0},
 			3: {"Task_A": 0, "Task_B": 0, "Task_C": 10, "Task_D": 0},
@@ -368,7 +371,7 @@ func TestVerifyFairness(t *testing.T) {
 		}
 
 		for range 20 {
-			_, newH, err := shuffleTask(rules, history)
+			_, newH, err := matcher.ShuffleTask(rules, history)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -391,16 +394,16 @@ func TestVerifyFairness(t *testing.T) {
 	t.Run("端数回数での差が最大1回であることの検証 (4部屋×4タスク, 15回実行)", func(t *testing.T) {
 		roomSlice := []int{1, 2, 3, 4}
 		taskSlice := []string{"Task_A", "Task_B", "Task_C", "Task_D"}
-		rules := []assignRule{
+		rules := []domain.AssignRule{
 			{
-				rooms: mapset.NewSet(roomSlice...),
-				tasks: taskSlice,
+				Rooms: mapset.NewSet(roomSlice...),
+				Tasks: taskSlice,
 			},
 		}
 
-		history := make(assignHistory)
+		history := make(domain.AssignHistory)
 		for range 15 {
-			_, newH, err := shuffleTask(rules, history)
+			_, newH, err := matcher.ShuffleTask(rules, history)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -423,7 +426,7 @@ func BenchmarkShuffleTask(b *testing.B) {
 	const numRules = 20
 	const numRooms = 50
 
-	rules := make([]assignRule, numRules)
+	rules := make([]domain.AssignRule, numRules)
 	for i := range numRules {
 		roomSlice := make([]int, numRooms)
 		taskSlice := make([]string, numRooms)
@@ -431,17 +434,17 @@ func BenchmarkShuffleTask(b *testing.B) {
 			roomSlice[j] = i*1000 + j
 			taskSlice[j] = fmt.Sprintf("task_%d_%d", i, j)
 		}
-		rules[i] = assignRule{
-			rooms: mapset.NewSet(roomSlice...),
-			tasks: taskSlice,
+		rules[i] = domain.AssignRule{
+			Rooms: mapset.NewSet(roomSlice...),
+			Tasks: taskSlice,
 		}
 	}
 
-	history := make(assignHistory)
+	history := make(domain.AssignHistory)
 
 	b.ResetTimer()
 	for b.Loop() {
-		_, _, err := shuffleTask(rules, history)
+		_, _, err := matcher.ShuffleTask(rules, history)
 		if err != nil {
 			b.Fatalf("unexpected error: %v", err)
 		}

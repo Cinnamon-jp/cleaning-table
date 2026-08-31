@@ -1,11 +1,15 @@
-// Package main は掃除当番の割り当てと検証を行うメインパッケージです。
-package main
+// Package validator は割り当てルールおよび部屋のカバー率の検証を行います。
+package validator
 
 import (
 	"fmt"
+
+	"cleaning-table/internal/domain"
 )
 
-func checkDuplicatesAndSparse(rules []assignRule) error {
+// CheckDuplicatesAndSparse はルール集合の中で最大の要素数を持つルール（全部屋ルール）から
+// 他のルールの部屋集合を差し引き、すべての部屋が過不足なくカバーされているかを検証します。
+func CheckDuplicatesAndSparse(rules []domain.AssignRule) error {
 	if len(rules) == 0 {
 		return nil
 	}
@@ -13,17 +17,17 @@ func checkDuplicatesAndSparse(rules []assignRule) error {
 	maxIdx := 0 // 要素数が最大のインデックス（全部屋が入っていることとする）
 	maxN := 0
 	for i, rule := range rules {
-		if rule.rooms == nil {
+		if rule.Rooms == nil {
 			continue
 		}
-		nRooms := rule.rooms.Cardinality()
+		nRooms := rule.Rooms.Cardinality()
 		if maxN < nRooms {
 			maxIdx = i
 			maxN = nRooms
 		}
 	}
 
-	if rules[maxIdx].rooms == nil {
+	if rules[maxIdx].Rooms == nil {
 		return nil
 	}
 
@@ -37,10 +41,10 @@ func checkDuplicatesAndSparse(rules []assignRule) error {
 	}
 
 	// 元のデータを破壊しないように Clone して差集合を計算
-	allRoom := rules[maxIdx].rooms.Clone()
+	allRoom := rules[maxIdx].Rooms.Clone()
 	for _, i := range targetIdx {
-		if rules[i].rooms != nil {
-			allRoom = allRoom.Difference(rules[i].rooms)
+		if rules[i].Rooms != nil {
+			allRoom = allRoom.Difference(rules[i].Rooms)
 		}
 	}
 
