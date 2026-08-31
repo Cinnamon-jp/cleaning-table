@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	mapset "github.com/deckarep/golang-set/v2"
-
 	"cleaning-table/internal/domain"
 	"cleaning-table/internal/matcher"
 )
@@ -13,7 +11,7 @@ import (
 func TestShuffleTask_Basic(t *testing.T) {
 	rules := []domain.AssignRule{
 		{
-			Rooms: mapset.NewSet(101, 102, 103),
+			Rooms: []int{101, 102, 103},
 			Tasks: []string{"ゴミ出し", "掃除機", "風呂掃除"},
 		},
 	}
@@ -51,7 +49,7 @@ func TestShuffleTask_DuplicateTasks(t *testing.T) {
 	// 同じタスク（例: ゴミ分別が2人分）が含まれるケース
 	rules := []domain.AssignRule{
 		{
-			Rooms: mapset.NewSet(101, 102, 103),
+			Rooms: []int{101, 102, 103},
 			Tasks: []string{"ゴミ分別", "シャワー室", "ゴミ分別"},
 		},
 	}
@@ -93,10 +91,70 @@ func TestShuffleTask_DuplicateTasks(t *testing.T) {
 	}
 }
 
+func TestShuffleTask_DuplicateRoomInRule(t *testing.T) {
+	// 同一ルール内に部屋番号の重複がある場合
+	rules := []domain.AssignRule{
+		{
+			Rooms: []int{101, 101, 102},
+			Tasks: []string{"A", "B", "C"},
+		},
+	}
+
+	_, _, err := matcher.ShuffleTask(rules, nil)
+	if err == nil {
+		t.Fatal("expected error for duplicate room in rule, got nil")
+	}
+}
+
+func TestShuffleTask_OrderInvariance(t *testing.T) {
+	// 部屋番号の指定順序が昇順でも降順でも公平に割り当てられること
+	rulesAsc := []domain.AssignRule{
+		{
+			Rooms: []int{101, 102, 103},
+			Tasks: []string{"A", "B", "C"},
+		},
+	}
+	rulesDesc := []domain.AssignRule{
+		{
+			Rooms: []int{103, 102, 101},
+			Tasks: []string{"A", "B", "C"},
+		},
+	}
+
+	historyAsc := make(domain.AssignHistory)
+	historyDesc := make(domain.AssignHistory)
+
+	const rounds = 30
+	for range rounds {
+		_, newHAsc, err := matcher.ShuffleTask(rulesAsc, historyAsc)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		historyAsc = newHAsc
+
+		_, newHDesc, err := matcher.ShuffleTask(rulesDesc, historyDesc)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		historyDesc = newHDesc
+	}
+
+	for _, room := range []int{101, 102, 103} {
+		for _, task := range []string{"A", "B", "C"} {
+			if historyAsc[room][task] != 10 {
+				t.Errorf("Asc: room %d task %s count = %d, expected 10", room, task, historyAsc[room][task])
+			}
+			if historyDesc[room][task] != 10 {
+				t.Errorf("Desc: room %d task %s count = %d, expected 10", room, task, historyDesc[room][task])
+			}
+		}
+	}
+}
+
 func TestShuffleTask_ErrorMismatch(t *testing.T) {
 	rules := []domain.AssignRule{
 		{
-			Rooms: mapset.NewSet(101, 102),
+			Rooms: []int{101, 102},
 			Tasks: []string{"ゴミ出し", "掃除機", "風呂掃除"},
 		},
 	}
@@ -140,7 +198,7 @@ func TestShuffleTask_EdgeCases(t *testing.T) {
 		{
 			name: "rule.Tasks が nil",
 			rules: []domain.AssignRule{
-				{Rooms: mapset.NewSet(1), Tasks: nil},
+				{Rooms: []int{1}, Tasks: nil},
 			},
 			history: nil,
 			wantErr: true,
@@ -148,7 +206,7 @@ func TestShuffleTask_EdgeCases(t *testing.T) {
 		{
 			name: "部屋とタスクが両方空（要素数0）",
 			rules: []domain.AssignRule{
-				{Rooms: mapset.NewSet[int](), Tasks: []string{}},
+				{Rooms: []int{}, Tasks: []string{}},
 			},
 			history: nil,
 			wantErr: true,
@@ -156,7 +214,7 @@ func TestShuffleTask_EdgeCases(t *testing.T) {
 		{
 			name: "history が nil",
 			rules: []domain.AssignRule{
-				{Rooms: mapset.NewSet(1), Tasks: []string{"A"}},
+				{Rooms: []int{1}, Tasks: []string{"A"}},
 			},
 			history:     nil,
 			wantErr:     false,
@@ -165,7 +223,7 @@ func TestShuffleTask_EdgeCases(t *testing.T) {
 		{
 			name: "history[room] が nil",
 			rules: []domain.AssignRule{
-				{Rooms: mapset.NewSet(1), Tasks: []string{"A"}},
+				{Rooms: []int{1}, Tasks: []string{"A"}},
 			},
 			history:     domain.AssignHistory{1: nil},
 			wantErr:     false,
@@ -174,7 +232,7 @@ func TestShuffleTask_EdgeCases(t *testing.T) {
 		{
 			name: "history に負の値が含まれる",
 			rules: []domain.AssignRule{
-				{Rooms: mapset.NewSet(1), Tasks: []string{"A"}},
+				{Rooms: []int{1}, Tasks: []string{"A"}},
 			},
 			history:     domain.AssignHistory{1: {"A": -10}},
 			wantErr:     false,
@@ -183,7 +241,7 @@ func TestShuffleTask_EdgeCases(t *testing.T) {
 		{
 			name: "history に非常に大きな値が含まれる",
 			rules: []domain.AssignRule{
-				{Rooms: mapset.NewSet(1), Tasks: []string{"A"}},
+				{Rooms: []int{1}, Tasks: []string{"A"}},
 			},
 			history:     domain.AssignHistory{1: {"A": 1000000}},
 			wantErr:     false,
@@ -192,7 +250,7 @@ func TestShuffleTask_EdgeCases(t *testing.T) {
 		{
 			name: "タスク名が空文字列や特殊文字",
 			rules: []domain.AssignRule{
-				{Rooms: mapset.NewSet(1, 2), Tasks: []string{"", "🧹✨\n\t"}},
+				{Rooms: []int{1, 2}, Tasks: []string{"", "🧹✨\n\t"}},
 			},
 			history:     nil,
 			wantErr:     false,
@@ -231,7 +289,7 @@ func TestShuffleTask_FairnessSimulation(t *testing.T) {
 
 	rules := []domain.AssignRule{
 		{
-			Rooms: mapset.NewSet(rooms...),
+			Rooms: rooms,
 			Tasks: tasks,
 		},
 	}
@@ -266,7 +324,7 @@ func TestShuffleTask_PrioritizeInfrequentTask(t *testing.T) {
 	// 部屋2はすでに TaskA を 0 回、TaskB を 10 回行っている
 	rules := []domain.AssignRule{
 		{
-			Rooms: mapset.NewSet(1, 2),
+			Rooms: []int{1, 2},
 			Tasks: []string{"TaskA", "TaskB"},
 		},
 	}
@@ -294,7 +352,7 @@ func TestShuffleTask_PrioritizeInfrequentTask(t *testing.T) {
 func TestShuffleTask_Immutability(t *testing.T) {
 	rules := []domain.AssignRule{
 		{
-			Rooms: mapset.NewSet(1),
+			Rooms: []int{1},
 			Tasks: []string{"TaskA"},
 		},
 	}
@@ -329,7 +387,7 @@ func TestVerifyFairness(t *testing.T) {
 
 		rules := []domain.AssignRule{
 			{
-				Rooms: mapset.NewSet(roomSlice...),
+				Rooms: roomSlice,
 				Tasks: taskSlice,
 			},
 		}
@@ -358,7 +416,7 @@ func TestVerifyFairness(t *testing.T) {
 		taskSlice := []string{"Task_A", "Task_B", "Task_C", "Task_D"}
 		rules := []domain.AssignRule{
 			{
-				Rooms: mapset.NewSet(roomSlice...),
+				Rooms: roomSlice,
 				Tasks: taskSlice,
 			},
 		}
@@ -396,7 +454,7 @@ func TestVerifyFairness(t *testing.T) {
 		taskSlice := []string{"Task_A", "Task_B", "Task_C", "Task_D"}
 		rules := []domain.AssignRule{
 			{
-				Rooms: mapset.NewSet(roomSlice...),
+				Rooms: roomSlice,
 				Tasks: taskSlice,
 			},
 		}
@@ -435,7 +493,7 @@ func BenchmarkShuffleTask(b *testing.B) {
 			taskSlice[j] = fmt.Sprintf("task_%d_%d", i, j)
 		}
 		rules[i] = domain.AssignRule{
-			Rooms: mapset.NewSet(roomSlice...),
+			Rooms: roomSlice,
 			Tasks: taskSlice,
 		}
 	}

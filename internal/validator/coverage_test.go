@@ -3,8 +3,6 @@ package validator_test
 import (
 	"testing"
 
-	mapset "github.com/deckarep/golang-set/v2"
-
 	"cleaning-table/internal/domain"
 	"cleaning-table/internal/validator"
 )
@@ -16,57 +14,56 @@ func TestCheckDuplicatesAndSparse(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "成功: すべての部屋が他のルールによってカバーされている",
+			name: "成功: すべての部屋が他のルールによって重複なくカバーされている",
 			rules: []domain.AssignRule{
 				{
-					Rooms: mapset.NewSet(1, 2, 3), // maxIdx (部屋数 3)
+					Rooms: []int{1, 2, 3}, // maxIdx (部屋数 3)
 					Tasks: []string{"taskA", "taskB", "taskC"},
 				},
 				{
-					Rooms: mapset.NewSet(1, 2),
+					Rooms: []int{1, 2},
 					Tasks: []string{"taskA", "taskB"},
 				},
 				{
-					Rooms: mapset.NewSet(3),
+					Rooms: []int{3},
 					Tasks: []string{"taskC"},
 				},
 			},
 			wantErr: false,
 		},
 		{
-			name: "成功: 他のルール間で部屋に重複があってもカバーされていればOK",
+			name: "エラー: 他のルール間で部屋に重複割り当てがある（部屋2が2回）",
 			rules: []domain.AssignRule{
 				{
-					Rooms: mapset.NewSet(1, 2),
+					Rooms: []int{1, 2},
 					Tasks: []string{"taskA", "taskB"},
 				},
 				{
-					Rooms: mapset.NewSet(1, 2, 3, 4), // maxIdx (部屋数 4)
+					Rooms: []int{1, 2, 3, 4}, // maxIdx (部屋数 4)
 					Tasks: []string{"taskA", "taskB", "taskC", "taskD"},
 				},
 				{
-					Rooms: mapset.NewSet(2, 3, 4),
+					Rooms: []int{2, 3, 4},
 					Tasks: []string{"taskB", "taskC", "taskD"},
 				},
 			},
-			wantErr: false,
+			wantErr: true, // 重複排除仕様によりエラー
 		},
 		{
-			name: "エラー: カバーされていない部屋が残っている",
+			name: "エラー: カバーされていない部屋が残っている (部屋4が未カバー)",
 			rules: []domain.AssignRule{
 				{
-					Rooms: mapset.NewSet(1, 2, 3, 4), // maxIdx (部屋数 4)
+					Rooms: []int{1, 2, 3, 4}, // maxIdx (部屋数 4)
 					Tasks: []string{"taskA", "taskB", "taskC", "taskD"},
 				},
 				{
-					Rooms: mapset.NewSet(1, 2),
+					Rooms: []int{1, 2},
 					Tasks: []string{"taskA", "taskB"},
 				},
 				{
-					Rooms: mapset.NewSet(3),
+					Rooms: []int{3},
 					Tasks: []string{"taskC"},
 				},
-				// 部屋4がカバーされていない
 			},
 			wantErr: true,
 		},
@@ -74,8 +71,58 @@ func TestCheckDuplicatesAndSparse(t *testing.T) {
 			name: "エラー: ルールが全部屋ルール1つのみで引き算する対象がない",
 			rules: []domain.AssignRule{
 				{
-					Rooms: mapset.NewSet(1, 2, 3),
+					Rooms: []int{1, 2, 3},
 					Tasks: []string{"taskA", "taskB", "taskC"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "エラー: 1つの部分ルール内に重複部屋がある (101が2回)",
+			rules: []domain.AssignRule{
+				{
+					Rooms: []int{101, 102, 103},
+					Tasks: []string{"A", "B", "C"},
+				},
+				{
+					Rooms: []int{101, 101},
+					Tasks: []string{"A", "A"},
+				},
+				{
+					Rooms: []int{102, 103},
+					Tasks: []string{"B", "C"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "エラー: 全部屋ルールに存在しない未知の部屋番号が含まれる (999)",
+			rules: []domain.AssignRule{
+				{
+					Rooms: []int{101, 102},
+					Tasks: []string{"A", "B"},
+				},
+				{
+					Rooms: []int{101, 999},
+					Tasks: []string{"A", "B"},
+				},
+				{
+					Rooms: []int{102},
+					Tasks: []string{"C"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "エラー: 全部屋ルール自体に重複部屋番号が含まれる",
+			rules: []domain.AssignRule{
+				{
+					Rooms: []int{101, 101, 102},
+					Tasks: []string{"A", "B", "C"},
+				},
+				{
+					Rooms: []int{101, 102},
+					Tasks: []string{"A", "B"},
 				},
 			},
 			wantErr: true,
@@ -99,9 +146,9 @@ func TestCheckDuplicatesAndSparse(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "正常: rooms が空集合（要素数0）のみ",
+			name: "正常: rooms が空スライスのみ",
 			rules: []domain.AssignRule{
-				{Rooms: mapset.NewSet[int](), Tasks: []string{}},
+				{Rooms: []int{}, Tasks: []string{}},
 			},
 			wantErr: false,
 		},
@@ -109,7 +156,7 @@ func TestCheckDuplicatesAndSparse(t *testing.T) {
 			name: "エラー: 一部が nil で残りがカバーされていない",
 			rules: []domain.AssignRule{
 				{Rooms: nil, Tasks: []string{"A"}},
-				{Rooms: mapset.NewSet(1, 2), Tasks: []string{"A", "B"}},
+				{Rooms: []int{1, 2}, Tasks: []string{"A", "B"}},
 			},
 			wantErr: true,
 		},

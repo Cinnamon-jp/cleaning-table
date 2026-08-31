@@ -50,3 +50,25 @@ func TestAssignHistory_NilHandling(t *testing.T) {
 		t.Errorf("expected 1 after increment, got %d", count)
 	}
 }
+
+func TestAssignHistory_ZeroValueAndNonExistent(t *testing.T) {
+	h := domain.AssignHistory{
+		101: {"TaskA": 5},
+	}
+
+	// 存在する部屋だが存在しないタスク
+	if count := h.GetCount(101, "TaskB"); count != 0 {
+		t.Errorf("expected 0 for non-existent task, got %d", count)
+	}
+
+	// 存在しない部屋番号
+	if count := h.GetCount(999, "TaskA"); count != 0 {
+		t.Errorf("expected 0 for non-existent room, got %d", count)
+	}
+
+	// 存在しない部屋への Increment
+	h.Increment(202, "TaskZ")
+	if count := h.GetCount(202, "TaskZ"); count != 1 {
+		t.Errorf("expected 1 after incrementing new room, got %d", count)
+	}
+}

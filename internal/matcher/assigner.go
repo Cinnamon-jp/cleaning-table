@@ -28,7 +28,7 @@ func ShuffleTask(
 			return nil, nil, fmt.Errorf("rooms and tasks must not be nil (index %d)", i)
 		}
 
-		nRooms := rule.Rooms.Cardinality()
+		nRooms := len(rule.Rooms)
 		nTasks := len(rule.Tasks)
 		if nRooms != nTasks {
 			return nil, nil, fmt.Errorf("number of rooms and tasks must match [%d != %d] (index %d)", nRooms, nTasks, i)
@@ -38,7 +38,16 @@ func ShuffleTask(
 			return nil, nil, fmt.Errorf("rooms and tasks must not be empty (index %d)", i)
 		}
 
-		rooms := rule.Rooms.ToSlice()
+		// 同一ルール内での部屋の重複チェック
+		seenRoom := make(map[int]bool, nRooms)
+		for _, room := range rule.Rooms {
+			if seenRoom[room] {
+				return nil, nil, fmt.Errorf("duplicate room %d found in rule (index %d)", room, i)
+			}
+			seenRoom[room] = true
+		}
+
+		rooms := slices.Clone(rule.Rooms)
 		tasks := slices.Clone(rule.Tasks)
 
 		// 同一回数の候補間で偏りが出ないよう事前にランダムシャッフル

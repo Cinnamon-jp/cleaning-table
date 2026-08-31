@@ -3,13 +3,11 @@ package domain
 
 import (
 	"maps"
-
-	mapset "github.com/deckarep/golang-set/v2"
 )
 
-// AssignRule は割り当てルール（対象部屋集合とタスク一覧）を表します。
+// AssignRule は割り当てルール（対象部屋一覧とタスク一覧）を表します。
 type AssignRule struct {
-	Rooms mapset.Set[int]
+	Rooms []int
 	Tasks []string
 }
 
