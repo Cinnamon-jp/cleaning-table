@@ -42,7 +42,7 @@ func (s Set) ToSlice() []int {
 	return res
 }
 
-// Union は2つの集合の和集合（a ∪ b）を返します。
+// Union は2つの集合の和集合 (a ∪ b) を返します。
 func Union(a, b Set) Set {
 	res := make(Set, len(a)+len(b))
 	for k := range a {
@@ -54,7 +54,7 @@ func Union(a, b Set) Set {
 	return res
 }
 
-// Difference は集合 a から b の要素を取り除いた差集合（a \ b）を返します。
+// Difference は集合 a から b の要素を取り除いた差集合 (a \ b) を返します。
 func Difference(a, b Set) Set {
 	res := make(Set, len(a))
 	for k := range a {
@@ -65,7 +65,7 @@ func Difference(a, b Set) Set {
 	return res
 }
 
-// Intersect は2つの集合の積集合（a ∩ b）を返します。
+// Intersect は2つの集合の積集合 (a ∩ b) を返します。
 func Intersect(a, b Set) Set {
 	if len(a) > len(b) {
 		a, b = b, a

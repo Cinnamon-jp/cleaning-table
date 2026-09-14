@@ -1,2 +1,5 @@
 # cleaning-table
 *.pdf
+*.ttf
+history.json
+reverse_table.txt
