@@ -27,29 +27,45 @@ func WritePDF(results []domain.AssignResult, fontPath, outputPath string) error 
 		}
 	}
 
-	// 部屋番号順にソートし、フロアごとに分類
-	sortedResults := slices.Clone(results)
-	slices.SortFunc(sortedResults, func(a, b domain.AssignResult) int {
-		return a.Room - b.Room
-	})
+	// 各部屋のタスクをマップ化し、フロア一覧と部屋番号の範囲（オフセット）を算出
+	taskMap := make(map[int]string, len(results))
+	floorSet := make(map[int]bool)
+	minOffset := 1
+	maxOffset := 1
 
-	floorResults := make(map[int][]domain.AssignResult)
-	floorKeys := make([]int, 0)
-	seenFloor := make(map[int]bool)
-
-	for _, res := range sortedResults {
+	for _, res := range results {
+		taskMap[res.Room] = res.Task
 		fl := res.Room / 100
-		if !seenFloor[fl] {
-			seenFloor[fl] = true
-			floorKeys = append(floorKeys, fl)
+		floorSet[fl] = true
+		off := res.Room % 100
+		if off > maxOffset {
+			maxOffset = off
 		}
-		floorResults[fl] = append(floorResults[fl], res)
+	}
+
+	floorKeys := make([]int, 0, len(floorSet))
+	for fl := range floorSet {
+		floorKeys = append(floorKeys, fl)
 	}
 	slices.Sort(floorKeys)
 
+	// 全フロアを同じ部屋番号範囲（固定長）で揃え、役職のない部屋はタスクを空文字にする
+	floorResults := make(map[int][]domain.AssignResult, len(floorKeys))
+	for _, fl := range floorKeys {
+		items := make([]domain.AssignResult, 0, maxOffset-minOffset+1)
+		for off := minOffset; off <= maxOffset; off++ {
+			room := fl*100 + off
+			items = append(items, domain.AssignResult{
+				Room: room,
+				Task: taskMap[room],
+			})
+		}
+		floorResults[fl] = items
+	}
+
 	pdf := gopdf.GoPdf{}
-	// A4 横向き (841.89 x 595.28 pt)
-	pdf.Start(gopdf.Config{PageSize: *gopdf.PageSizeA4Landscape})
+	// A4 縦向き (595.28 x 841.89 pt)
+	pdf.Start(gopdf.Config{PageSize: *gopdf.PageSizeA4})
 
 	const fontName = "custom_font"
 	if err := pdf.AddTTFFont(fontName, cleanFontPath); err != nil {
@@ -58,18 +74,19 @@ func WritePDF(results []domain.AssignResult, fontPath, outputPath string) error 
 
 	const (
 		marginL       = 35.0
-		marginT       = 25.0
-		pageW         = 841.89
-		usableW       = pageW - (marginL * 2) // 771.89
-		floorsPerPage = 3
-		cols          = 5
-		rowH          = 13.0
-		colW          = usableW / float64(cols) // 154.38
-		roomW         = 38.0
-		taskW         = colW - roomW // 116.38
+		marginT       = 30.0
+		pageW         = 595.28                 // A4 縦向きの幅
+		usableW       = pageW - (marginL * 2)  // 525.28
+		floorsPerPage = 1                      // 1ページに 1 フロア配置
+		colGap        = 25.0                   // 2列間の間隔
+		colW          = (usableW - colGap) / 2 // 250.14
+		roomW         = 46.0                   // 部屋番号セルの幅
+		taskW         = colW - roomW           // 204.14 (タスク名セルの幅)
+		rowH          = 22.0                   // 1行の高さ（30行で660pt）
+		splitRoomOff  = 30                     // 左列: 1〜30号室、右列: 31号室〜
 	)
 
-	// 1ページに最大 3 フロアずつ配置
+	// 1ページに 1 フロアずつ配置
 	for i := 0; i < len(floorKeys); i += floorsPerPage {
 		pdf.AddPage()
 
@@ -79,7 +96,7 @@ func WritePDF(results []domain.AssignResult, fontPath, outputPath string) error 
 		currentY := marginT
 
 		// ヘッダー描画
-		if err := pdf.SetFont(fontName, "", 15); err != nil {
+		if err := pdf.SetFont(fontName, "", 16); err != nil {
 			return err
 		}
 		pdf.SetTextColor(30, 41, 59)
@@ -93,81 +110,93 @@ func WritePDF(results []domain.AssignResult, fontPath, outputPath string) error 
 			return err
 		}
 		pdf.SetTextColor(100, 116, 139)
-		dateStr := fmt.Sprintf("出力日時: %s | ページ %d / %d",
-			time.Now().Format("2006-01-02 15:04"), (i/floorsPerPage)+1, (len(floorKeys)+floorsPerPage-1)/floorsPerPage)
+		dateStr := fmt.Sprintf("出力日時: %s",
+			time.Now().Format("2006-01-02 15:04"))
 		pdf.SetXY(pageW-marginL-250, currentY+4)
 		if err := pdf.CellWithOption(&gopdf.Rect{W: 250, H: 15}, dateStr, gopdf.CellOption{Align: gopdf.Right}); err != nil {
 			return err
 		}
 
-		currentY += 22
+		currentY += 26
 
 		// 各フロアの描画
 		for _, fl := range pageFloors {
 			items := floorResults[fl]
 
 			// フロア見出し
-			if err := pdf.SetFont(fontName, "", 11); err != nil {
+			if err := pdf.SetFont(fontName, "", 12); err != nil {
 				return err
 			}
 			pdf.SetTextColor(15, 23, 42)
 			pdf.SetXY(marginL, currentY)
-			if err := pdf.Text(fmt.Sprintf("■ %d階 (%dF)  [全 %d 部屋]", fl, fl, len(items))); err != nil {
+			if err := pdf.Text(fmt.Sprintf("■ %d階", fl)); err != nil {
 				return err
 			}
 
-			currentY += 16
+			currentY += 20
 
-			// グリッド表描画 (5列×行数)
-			numRows := (len(items) + cols - 1) / cols
-			for row := range numRows {
-				for col := range cols {
-					idx := row*cols + col
-					if idx >= len(items) {
-						continue
-					}
-					item := items[idx]
+			// 2列レイアウト描画（左列: 01〜30号室、右列: 31〜49号室）
+			for _, item := range items {
+				off := item.Room % 100
+				var col, row int
+				if off <= splitRoomOff {
+					col = 0
+					row = off - 1
+				} else {
+					col = 1
+					row = off - (splitRoomOff + 1)
+				}
 
-					cellX := marginL + float64(col)*colW
-					cellY := currentY + float64(row)*rowH
+				cellX := marginL + float64(col)*(colW+colGap)
+				cellY := currentY + float64(row)*rowH
 
-					// 背景と枠線
-					pdf.SetLineWidth(0.4)
-					if item.Task == "自室清掃" {
-						pdf.SetFillColor(248, 250, 252) // 非常に薄いグレー
-						pdf.SetStrokeColor(226, 232, 240)
-					} else {
-						pdf.SetFillColor(241, 245, 249) // やや強調
-						pdf.SetStrokeColor(203, 213, 225)
-					}
-					if err := pdf.Rectangle(cellX, cellY, cellX+colW, cellY+rowH, "DF", 0, 0); err != nil {
-						return err
-					}
+				// 背景と枠線
+				pdf.SetLineWidth(0.4)
+				switch item.Task {
+				case "":
+					pdf.SetFillColor(255, 255, 255) // 役職なしは白
+					pdf.SetStrokeColor(226, 232, 240)
+				case "自室清掃":
+					pdf.SetFillColor(248, 250, 252) // 非常に薄いグレー
+					pdf.SetStrokeColor(226, 232, 240)
+				default:
+					pdf.SetFillColor(241, 245, 249) // やや強調
+					pdf.SetStrokeColor(203, 213, 225)
+				}
+				if err := pdf.Rectangle(cellX, cellY, cellX+colW, cellY+rowH, "DF", 0, 0); err != nil {
+					return err
+				}
 
-					// 部屋番号セル
-					if err := pdf.SetFont(fontName, "", 8.5); err != nil {
-						return err
-					}
+				// 部屋番号とタスク名の仕切り線
+				pdf.Line(cellX+roomW, cellY, cellX+roomW, cellY+rowH)
+
+				// 部屋番号セル
+				if err := pdf.SetFont(fontName, "", 9.5); err != nil {
+					return err
+				}
+				if item.Task == "" {
+					pdf.SetTextColor(148, 163, 184) // 役職なしは薄めの色
+				} else {
 					pdf.SetTextColor(71, 85, 105)
-					pdf.SetXY(cellX+2, cellY+1.5)
-					if err := pdf.CellWithOption(&gopdf.Rect{W: roomW - 2, H: rowH}, fmt.Sprintf("%d", item.Room), gopdf.CellOption{Align: gopdf.Left}); err != nil {
-						return err
-					}
+				}
+				pdf.SetXY(cellX+4, cellY)
+				if err := pdf.CellWithOption(&gopdf.Rect{W: roomW - 6, H: rowH}, fmt.Sprintf("%d", item.Room), gopdf.CellOption{Align: gopdf.Left | gopdf.Middle}); err != nil {
+					return err
+				}
 
-					// タスク名セル
-					if item.Task == "自室清掃" {
-						pdf.SetTextColor(100, 116, 139)
-					} else {
-						pdf.SetTextColor(15, 23, 42) // 濃い色
-					}
-					pdf.SetXY(cellX+roomW, cellY+1.5)
-					if err := pdf.CellWithOption(&gopdf.Rect{W: taskW - 2, H: rowH}, item.Task, gopdf.CellOption{Align: gopdf.Left}); err != nil {
-						return err
-					}
+				// タスク名セル
+				if item.Task == "自室清掃" {
+					pdf.SetTextColor(100, 116, 139)
+				} else {
+					pdf.SetTextColor(15, 23, 42) // 濃い色
+				}
+				pdf.SetXY(cellX+roomW+6, cellY)
+				if err := pdf.CellWithOption(&gopdf.Rect{W: taskW - 8, H: rowH}, item.Task, gopdf.CellOption{Align: gopdf.Left | gopdf.Middle}); err != nil {
+					return err
 				}
 			}
 
-			currentY += float64(numRows)*rowH + 18
+			currentY += float64(splitRoomOff)*rowH + 18
 		}
 	}
 
