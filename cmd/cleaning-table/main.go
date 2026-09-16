@@ -25,7 +25,13 @@ func run() error {
 	historyPath := flag.String("history", "history.json", "過去担当履歴ファイルのパス (JSON)")
 	pdfPath := flag.String("pdf", "cleaning_table.pdf", "出力するPDF当番表のパス (空でスキップ)")
 	txtPath := flag.String("txt", "reverse_table.txt", "出力する逆引きテキストのパス (空でスキップ)")
-	fontPath := flag.String("font", "NotoSerifJP-VariableFont_wght.ttf", "日本語 TrueType フォントファイルのパス")
+	defaultFont := "NotoSerifJP-Bold.ttf"
+	if _, err := os.Stat(defaultFont); err != nil {
+		if _, errVar := os.Stat("NotoSerifJP-VariableFont_wght.ttf"); errVar == nil {
+			defaultFont = "NotoSerifJP-VariableFont_wght.ttf"
+		}
+	}
+	fontPath := flag.String("font", defaultFont, "日本語 TrueType フォントファイルのパス")
 	flag.Parse()
 
 	// 1. 設定ファイルの読み込み

@@ -65,9 +65,12 @@ func TestWriteReverseText(t *testing.T) {
 }
 
 func TestWritePDF(t *testing.T) {
-	fontPath := "../../NotoSerifJP-VariableFont_wght.ttf"
+	fontPath := "../../NotoSerifJP-Bold.ttf"
 	if _, err := os.Stat(fontPath); err != nil {
-		t.Skipf("skipping PDF test, font not found: %v", err)
+		fontPath = "../../NotoSerifJP-VariableFont_wght.ttf"
+		if _, err := os.Stat(fontPath); err != nil {
+			t.Skipf("skipping PDF test, font not found: %v", err)
+		}
 	}
 
 	tempDir := t.TempDir()

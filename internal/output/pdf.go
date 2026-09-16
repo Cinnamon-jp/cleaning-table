@@ -99,9 +99,9 @@ func WritePDF(results []domain.AssignResult, fontPath, outputPath string) error 
 		if err := pdf.SetFont(fontName, "", 16); err != nil {
 			return err
 		}
-		pdf.SetTextColor(30, 41, 59)
+		pdf.SetTextColor(0, 0, 0)
 		pdf.SetXY(marginL, currentY)
-		if err := pdf.Text("掃除当番表"); err != nil {
+		if err := pdf.Text("清掃割り振り表"); err != nil {
 			return err
 		}
 
@@ -109,7 +109,7 @@ func WritePDF(results []domain.AssignResult, fontPath, outputPath string) error 
 		if err := pdf.SetFont(fontName, "", 9); err != nil {
 			return err
 		}
-		pdf.SetTextColor(100, 116, 139)
+		pdf.SetTextColor(0, 0, 0)
 		dateStr := fmt.Sprintf("出力日時: %s",
 			time.Now().Format("2006-01-02 15:04"))
 		pdf.SetXY(pageW-marginL-250, currentY+4)
@@ -124,16 +124,16 @@ func WritePDF(results []domain.AssignResult, fontPath, outputPath string) error 
 			items := floorResults[fl]
 
 			// フロア見出し
-			if err := pdf.SetFont(fontName, "", 12); err != nil {
+			if err := pdf.SetFont(fontName, "", 18); err != nil {
 				return err
 			}
-			pdf.SetTextColor(15, 23, 42)
+			pdf.SetTextColor(0, 0, 0)
 			pdf.SetXY(marginL, currentY)
-			if err := pdf.Text(fmt.Sprintf("■ %d階", fl)); err != nil {
+			if err := pdf.CellWithOption(&gopdf.Rect{W: usableW, H: 26}, fmt.Sprintf("%d階", fl), gopdf.CellOption{Align: gopdf.Center | gopdf.Middle}); err != nil {
 				return err
 			}
 
-			currentY += 20
+			currentY += 50
 
 			// 2列レイアウト描画（左列: 01〜30号室、右列: 31〜49号室）
 			for _, item := range items {
@@ -150,19 +150,10 @@ func WritePDF(results []domain.AssignResult, fontPath, outputPath string) error 
 				cellX := marginL + float64(col)*(colW+colGap)
 				cellY := currentY + float64(row)*rowH
 
-				// 背景と枠線
-				pdf.SetLineWidth(0.4)
-				switch item.Task {
-				case "":
-					pdf.SetFillColor(255, 255, 255) // 役職なしは白
-					pdf.SetStrokeColor(226, 232, 240)
-				case "自室清掃":
-					pdf.SetFillColor(248, 250, 252) // 非常に薄いグレー
-					pdf.SetStrokeColor(226, 232, 240)
-				default:
-					pdf.SetFillColor(241, 245, 249) // やや強調
-					pdf.SetStrokeColor(203, 213, 225)
-				}
+				// 背景と枠線（全セル白背景・黒枠線）
+				pdf.SetLineWidth(0.5)
+				pdf.SetFillColor(255, 255, 255)
+				pdf.SetStrokeColor(0, 0, 0)
 				if err := pdf.Rectangle(cellX, cellY, cellX+colW, cellY+rowH, "DF", 0, 0); err != nil {
 					return err
 				}
@@ -171,25 +162,20 @@ func WritePDF(results []domain.AssignResult, fontPath, outputPath string) error 
 				pdf.Line(cellX+roomW, cellY, cellX+roomW, cellY+rowH)
 
 				// 部屋番号セル
-				if err := pdf.SetFont(fontName, "", 9.5); err != nil {
+				if err := pdf.SetFont(fontName, "", 10); err != nil {
 					return err
 				}
-				if item.Task == "" {
-					pdf.SetTextColor(148, 163, 184) // 役職なしは薄めの色
-				} else {
-					pdf.SetTextColor(71, 85, 105)
-				}
-				pdf.SetXY(cellX+4, cellY)
-				if err := pdf.CellWithOption(&gopdf.Rect{W: roomW - 6, H: rowH}, fmt.Sprintf("%d", item.Room), gopdf.CellOption{Align: gopdf.Left | gopdf.Middle}); err != nil {
+				pdf.SetTextColor(0, 0, 0)
+				pdf.SetXY(cellX, cellY)
+				if err := pdf.CellWithOption(&gopdf.Rect{W: roomW, H: rowH}, fmt.Sprintf("%d", item.Room), gopdf.CellOption{Align: gopdf.Center | gopdf.Middle}); err != nil {
 					return err
 				}
 
 				// タスク名セル
-				if item.Task == "自室清掃" {
-					pdf.SetTextColor(100, 116, 139)
-				} else {
-					pdf.SetTextColor(15, 23, 42) // 濃い色
+				if err := pdf.SetFont(fontName, "", 10); err != nil {
+					return err
 				}
+				pdf.SetTextColor(0, 0, 0)
 				pdf.SetXY(cellX+roomW+6, cellY)
 				if err := pdf.CellWithOption(&gopdf.Rect{W: taskW - 8, H: rowH}, item.Task, gopdf.CellOption{Align: gopdf.Left | gopdf.Middle}); err != nil {
 					return err
