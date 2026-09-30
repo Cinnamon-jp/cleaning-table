@@ -21,7 +21,7 @@ func main() {
 }
 
 func run() error {
-	configPath := flag.String("config", "ideal_test.yaml", "設定ファイルのパス (YAML)")
+	configPath := flag.String("config", "real.yaml", "設定ファイルのパス (YAML)")
 	historyPath := flag.String("history", "history.json", "過去担当履歴ファイルのパス (JSON)")
 	pdfPath := flag.String("pdf", "cleaning_table.pdf", "出力するPDF当番表のパス (空でスキップ)")
 	txtPath := flag.String("txt", "reverse_table.txt", "出力する逆引きテキストのパス (空でスキップ)")
