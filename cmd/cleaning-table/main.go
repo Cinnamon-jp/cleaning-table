@@ -21,10 +21,10 @@ func main() {
 }
 
 func run() error {
-	configPath := flag.String("config", "real.yaml", "設定ファイルのパス (YAML)")
-	historyPath := flag.String("history", "history.json", "過去担当履歴ファイルのパス (JSON)")
-	pdfPath := flag.String("pdf", "cleaning_table.pdf", "出力するPDF当番表のパス (空でスキップ)")
-	txtPath := flag.String("txt", "reverse_table.txt", "出力する逆引きテキストのパス (空でスキップ)")
+	configPath := flag.String("config", "config.yaml", "設定ファイルのパス (YAML)")
+	historyPath := flag.String("history", "history.json", "履歴ファイルのパス (JSON)")
+	pdfPath := flag.String("pdf", "output.pdf", "出力するPDFのパス (空でスキップ)")
+	txtPath := flag.String("txt", "reverse.txt", "出力する逆引きテキストのパス (空でスキップ)")
 	defaultFont := "NotoSerifJP-Bold.ttf"
 	if _, err := os.Stat(defaultFont); err != nil {
 		if _, errVar := os.Stat("NotoSerifJP-VariableFont_wght.ttf"); errVar == nil {
@@ -34,7 +34,7 @@ func run() error {
 	fontPath := flag.String("font", defaultFont, "日本語 TrueType フォントファイルのパス")
 	flag.Parse()
 
-	// 1. 設定ファイルの読み込み
+	// 設定ファイルの読み込み
 	slog.Info("設定ファイルを読み込んでいます...", "config", *configPath)
 	rules, err := config.LoadFromFile(*configPath)
 	if err != nil {
@@ -42,7 +42,7 @@ func run() error {
 	}
 	slog.Info("設定ファイルを読み込みました", "rules_count", len(rules))
 
-	// 2. 過去履歴の読み込み
+	// 過去履歴の読み込み
 	slog.Info("過去の担当履歴を読み込んでいます...", "history", *historyPath)
 	history, err := storage.LoadHistory(*historyPath)
 	if err != nil {
@@ -50,7 +50,7 @@ func run() error {
 	}
 	slog.Info("過去履歴を読み込みました", "recorded_rooms", len(history))
 
-	// 3. 公平割り当ての実行（ハンガリアン法）
+	// 公平割り当ての実行（ハンガリアン法）
 	slog.Info("掃除当番の公平割り当て（シャッフル）を実行しています...")
 	results, newHistory, err := matcher.ShuffleTask(rules, history)
 	if err != nil {
@@ -58,7 +58,7 @@ func run() error {
 	}
 	slog.Info("割り当てが完了しました", "assigned_count", len(results))
 
-	// 4. 逆引きテキストの出力
+	// 逆引きテキストの出力
 	if *txtPath != "" {
 		slog.Info("逆引きテキストを出力しています...", "path", *txtPath)
 		if err := output.WriteReverseText(results, *txtPath); err != nil {
@@ -67,7 +67,7 @@ func run() error {
 		slog.Info("逆引きテキストを出力しました", "path", *txtPath)
 	}
 
-	// 5. PDF 当番表の出力
+	// PDF 当番表の出力
 	if *pdfPath != "" {
 		slog.Info("PDF当番表を出力しています...", "path", *pdfPath, "font", *fontPath)
 		if err := output.WritePDF(results, *fontPath, *pdfPath); err != nil {
@@ -76,7 +76,7 @@ func run() error {
 		slog.Info("PDF当番表を出力しました", "path", *pdfPath)
 	}
 
-	// 6. 更新された履歴の保存
+	// 更新された履歴の保存
 	if *historyPath != "" {
 		slog.Info("更新された履歴を保存しています...", "path", *historyPath)
 		if err := storage.SaveHistory(newHistory, *historyPath); err != nil {
