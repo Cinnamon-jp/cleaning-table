@@ -38,7 +38,7 @@ assignments:
                 整美委員: auto
 
         safety:
-            rooms: [113, 114, 115, 203, 213, 228, 303, 313, 328, 403, 413, 428, 503, 513, 528, 603, 613, 628, 703, 713, 714, 728, 803, 813, 828, 903, 913, 928]
+            rooms: [113, 114, 134, 203, 213, 228, 303, 313, 328, 403, 413, 428, 503, 513, 528, 603, 613, 628, 703, 713, 714, 728, 803, 813, 828, 903, 913, 928]
             tasks:
                 保安委員: auto
 
@@ -48,9 +48,9 @@ assignments:
                 保健衛生: auto
 
         international:
-            rooms: [108, 116, 144, 204]
+            rooms: [144, 204, 243, 248] # 108, 116, 144, 204, 243, 248, 310, 340, 346, 843
             tasks:
-                補食室（留）: 4
+                補食室（留）: auto
 
     # --- 一般フロア清掃（集合演算を利用） ---
     common:
@@ -58,7 +58,7 @@ assignments:
             rooms: "all_rooms.1F - facility - posts"
             tasks:
                 フロア: 3
-                トイレ1期: 2
+                トイレ1期: 3
                 トイレ2期: 3
                 ゴミ分別: 3
                 洗濯室: 2
@@ -68,7 +68,7 @@ assignments:
             rooms: "all_rooms.2F - facility - posts"
             tasks:
                 フロア: 6
-                トイレ1期: 2
+                トイレ1期: 3
                 トイレ2期: 3
                 ゴミ分別: 3
                 洗濯室: 2
@@ -82,7 +82,7 @@ assignments:
             rooms: "all_rooms.3F - facility - posts"
             tasks:
                 フロア: 6
-                トイレ1期: 2
+                トイレ1期: 3
                 トイレ2期: 3
                 ゴミ分別: 3
                 洗濯室: 2
@@ -95,7 +95,7 @@ assignments:
             rooms: "all_rooms.4F - facility - posts"
             tasks:
                 フロア: 6
-                トイレ1期: 2
+                トイレ1期: 3
                 トイレ2期: 3
                 ゴミ分別: 3
                 洗濯室: 2
@@ -107,7 +107,7 @@ assignments:
             rooms: "all_rooms.5F - facility - posts"
             tasks:
                 フロア: 6
-                トイレ1期: 2
+                トイレ1期: 3
                 トイレ2期: 3
                 ゴミ分別: 3
                 洗濯室: 2
@@ -119,7 +119,7 @@ assignments:
             rooms: "all_rooms.6F - facility - posts"
             tasks:
                 フロア: 6
-                トイレ1期: 2
+                トイレ1期: 3
                 トイレ2期: 3
                 ゴミ分別: 3
                 洗濯室: 2
@@ -132,7 +132,7 @@ assignments:
             rooms: "all_rooms.7F - facility - posts"
             tasks:
                 フロア: 6
-                トイレ1期: 2
+                トイレ1期: 3
                 トイレ2期: 3
                 ゴミ分別: 3
                 洗濯室: 2
@@ -144,7 +144,7 @@ assignments:
             rooms: "all_rooms.8F - facility - posts"
             tasks:
                 フロア: 6
-                トイレ1期: 2
+                トイレ1期: 3
                 トイレ2期: 3
                 ゴミ分別: 3
                 洗濯室: 2
@@ -156,7 +156,7 @@ assignments:
             rooms: "all_rooms.9F - facility - posts"
             tasks:
                 フロア: 6
-                トイレ1期: 2
+                トイレ1期: 3
                 トイレ2期: 3
                 ゴミ分別: 3
                 洗濯室: 2
